@@ -311,23 +311,22 @@ PPCRE, для тех, кто ещё не знаком с этой библиот
 \hrule
 \begin{verbatim}
 (defun segment-reader (stream ch n)
-(if (> n 0)
-(let ((chars))
-(do ((curr (read-char stream)
-(read-char stream)))
-((char= ch curr))
-(push curr chars))
-(cons (coerce (nreverse chars) ’string)
-(segment-reader stream ch (- n 1))))))
+  (if (> n 0)
+      (let ((chars))
+        (do ((curr (read-char stream)
+                   (read-char stream)))
+            ((char= ch curr))
+          (push curr chars))
+        (cons (coerce (nreverse chars) 'string)
+              (segment-reader stream ch (- n 1))))))
 \end{verbatim}
 \hrule
 
 Например, чтение 3 сегментов из потока t\footnote{Поток \textbf{t} соответствует стандартному вводу при работе в REPL'е.} с ограничительным символом \emph{/} будет осуществляться так:
 
 \begin{verbatim}
-* (segment-reader t #\/ 3)
+CL-USER> (segment-reader t #\/ 3)
 abc/def/ghi/
-
 ("abc" "def" "ghi")
 \end{verbatim}
 
@@ -356,19 +355,18 @@ $var =~ s|/usr/bin/rsh|/usr/bin/ssh|;
 \begin{verbatim}
 #+cl-ppcre
 (defmacro! match-mode-ppcre-lambda-form (o!args)
-``(lambda (,',g!str)
-(cl-ppcre:scan
-,(car ,g!args)
-,',g!str)))
-
+  ``(lambda (,',g!str)
+      (cl-ppcre:scan
+       ,(car ,g!args)
+       ,',g!str)))
 
 #+cl-ppcre
 (defmacro! subst-mode-ppcre-lambda-form (o!args)
-``(lambda (,',g!str)
-(cl-ppcre:regex-replace-all
-,(car ,g!args)
-,',g!str
-,(cadr ,g!args))))
+  ``(lambda (,',g!str)
+      (cl-ppcre:regex-replace-all
+       ,(car ,g!args)
+       ,',g!str
+       ,(cadr ,g!args))))
 \end{verbatim}
 \hrule
 
@@ -380,40 +378,38 @@ $var =~ s|/usr/bin/rsh|/usr/bin/ssh|;
 \hrule
 \begin{verbatim}
 #+cl-ppcre
-(defun I#~-readerl (stream sub-char numarg)
-(declare (ignore sub-char numarg))
-(let ((mode-char (read-char stream)))
-(cond
-((char= mode-char #\m)
-(match-mode-ppcre-lambda-form
-(segment-reader stream
-(read-char stream)
-1)))
-((char= mode-char #\s)
-(subst-mode-ppcre-lambda-form
-(segment-reader stream
-(read-char stream)
-2)))
-(t (error "Unknown #~~ mode character")))))
-
+(defun |#~-reader| (stream sub-char numarg)
+  (declare (ignore sub-char numarg))
+  (let ((mode-char (read-char stream)))
+    (cond
+      ((char= mode-char #\m)
+       (match-mode-ppcre-lambda-form
+        (segment-reader stream
+                        (read-char stream)
+                        1)))
+      ((char= mode-char #\s)
+       (subst-mode-ppcre-lambda-form
+        (segment-reader stream
+                        (read-char stream)
+                        2)))
+      (t (error "Unknown #~~ mode character")))))
 
 #+cl-ppcre
-(set-dispatch-macro-character #\# #\~ #'I#~-readerl)
+(set-dispatch-macro-character #\# #\~ #'|#~-reader|)
 \end{verbatim}
 \hrule
 
 Считывающий макрос \verb"#~" спроектирован с упором на удобство. Вот как мы можем создать функцию, производящую сравнение с регулярным выражением:
 
 \begin{verbatim}
-* #~m/abc/
-#<Interpreted Function>
+CL-USER> #~m/abc/
+#<FUNCTION (LAMBDA (#:STR178)) {CAB9B35}>
 \end{verbatim}
 
 Теперь применение этой функции к строке не будет отличаться от обычного вызова функции\footnote{Переменная \textbf{*} привязана к значению, возвращённому последним вычислением в REPL. В данный момент эта переменная привязана к нашей функции регулярного выражения.}:
 
 \begin{verbatim}
-* (funcall * "123abc")
-
+CL-USER> (funcall * "123abc")
 3
 6
 #()
@@ -425,38 +421,32 @@ $var =~ s|/usr/bin/rsh|/usr/bin/ssh|;
 Также мы можем создавать функции, производящие замену на базе регулярных выражений. Маленькая разница между Perl и нашим считывающим макросом в том, что функции замены на базе регулярных выражений не модифицируют свои аргументы. Они будут возвращать новые строки, являющиеся копиями исходных строк с выполненной заменой. Другим отличием является то, что, по умолчанию, этот считывающий макрос производит замену всех соответствий вместо замены первого соответствия в строке. Для того, чтобы получить такое поведение в Perl, вам понадобится добавить глобальный модификатор в ваше регулярное выражение, но в нашем случае глобального модификатора не нужно:
 
 \begin{verbatim}
-* (funcall #~s/abc/def/ "Testing abc testing abc")
+CL-USER> (funcall #~s/abc/def/ "Testing abc testing abc")
 "Testing def testing def"
+T
 \end{verbatim}
 
 Итак, как всё это работает? Что делают выражения \verb"#~", которые не являются Лисп выражениями? При поверхностном взгляде кажется что они считываются как функции, но оказывается что это не так. Давайте закавычим одну из этих форм и посмотрим как эта форма выглядит для Лисп считывателя:
 
 \begin{verbatim}
-* '#~m|\w+tp://I
-
-(LAMBDA (#:STR1)
-(CL-PPCRE:SCAN "\\w+tp://" #:STR1))
+CL-USER> '#~m|\w+tp://|
+(LAMBDA (#:STR178) (CL-PPCRE:SCAN "\\w+tp://" #:STR178))
 \end{verbatim}
 
 Подстановки выглядят также:
 
 \begin{verbatim}
-* '#~s/abc/def/
-
-(LAMBDA (#:STR2)
-(CL-PPCRE:REGEX-REPLACE-ALL
-"abc"
-#:STR2
-"def"))
+CL-USER> '#~s/abc/def/
+(LAMBDA (#:STR179) (CL-PPCRE:REGEX-REPLACE-ALL "abc" 
+                                               #:STR179 "def"))
 \end{verbatim}
 
 Они считываются как лямбда формы. Поскольку мы работаем с Лисп считывателем, то мы не можем написать их в каком-либо не-Лисп языке. Это обозначение функции. По той причине, что наши выражения являются простыми списками, в котором первым элементом выступает символ \textbf{lambda}, а в \emph{разделе Let - это Lambda} обсуждается как мы можем использовать лямбда формы в первом аргументе вызова функции для порождения анонимных функций:
 
 \begin{verbatim}
-* (if (#~m/^[\w-.]+$/ "hcsw.org")
-'kinda-looks-like-a-domain
-'no-chance!)
-
+CL-USER> (if (#~m/^[\w-.]+$/ "hcsw.org")
+	     'kinda-looks-like-a-domain
+	     'no-chance!)
 KINDA-LOOKS-LIKE-A-DOMAIN
 \end{verbatim}
 
@@ -465,7 +455,7 @@ KINDA-LOOKS-LIKE-A-DOMAIN
 Общей проблемой использования CL-PPCRE является \emph{экранирование} обратной косой черты в регулярных выражениях - программисты постоянно забывают о необходимости экранирования. Посмотрите, что получится при выполнении такого кода:
 
 \begin{verbatim}
-* "\w+"
+CL-USER> "\w+"
 "w+"
 \end{verbatim}
 
