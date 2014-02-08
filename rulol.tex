@@ -4,10 +4,16 @@
 \usepackage[english, russian]{babel}
 \usepackage{upquote}
 \usepackage{textcomp}
+\usepackage[pdftex]{graphicx}
+\graphicspath{{cover/}}
 \title{Let Over Lambda \\50 Лет Лиспу}
 \date{2013.11.02}
 \author{Даг Хойт}
 \begin{document}
+\begin{figure}[h]
+\includegraphics[width=1\linewidth]{first_page}
+\end{figure}
+
 \renewcommand {\contentsname} {Оглавление}
 \renewcommand {\chaptername} {Глава}
 %\input{hyphenation_dictionary}
@@ -49,4 +55,8 @@ doug@hcsw.org
 \input{macro_basics}
 \input{read_macros}
 \input{programs_that_program}
+
+\begin{figure}[h]
+\includegraphics[width=1\linewidth]{last_page}
+\end{figure}
 \end{document}
