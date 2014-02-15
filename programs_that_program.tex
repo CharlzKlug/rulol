@@ -17,14 +17,23 @@
  
 \begin{verbatim}
 (defun adder (x)
-(+ x 1)) 
+  (+ x 1))
 \end{verbatim}
  
 Очевидно мы можем применить этот объект к любому числу и получить результат, но является ли \verb"adder" настоящей функцией? Лисп утверждает что \verb"adder" - это функция\footnote{Если вы до сих пор не знакомы с функцией COMMON LISP \textbf{describe} то вам нужно немедленно с ней ознакомиться. Примените \textbf{describe} к функции, специальной форме, макросу, переменной, символу и замыканию.}: 
 
 \begin{verbatim} 
-* (describe #’adder)
-#<Interpreted Function> is a function. 
+CL-USER> (describe #'adder)
+#<FUNCTION ADDER>
+  [compiled function]
+
+Lambda-list: (X)
+Derived type: (FUNCTION (T) (VALUES NUMBER &OPTIONAL))
+Source form:
+  (SB-INT:NAMED-LAMBDA ADDER
+      (X)
+    (BLOCK ADDER (+ X 1)))
+; No value
 \end{verbatim}
  
 Но, именование этих объектов функциями является некорректным использованием термина с глубокими корнями в истории лиспа. \verb"Defun" и лямбда формы на самом деле создают \emph{процедуры}, или если говорить более точно, \emph{экземпляры, вызываемые как функции (funcallable instances)} [AMOP]. В чём различие? Процедуры не обязательно должны содержать в себе работу с преобразованием значений, но процедуры являются участками кода, возможно содержащим сохраняемую среду, которую можно выполнить (funcall). Когда лисп программисты пишут программы в определённом стиле, называемом \emph{функциональным стилем}, то получающиеся процедуры можно рассматривать и комбинировать в математическом стиле функциональных преобразований. 
@@ -56,7 +65,7 @@
 В \emph{разделе Предметно Ориентированные Языки} при первом знакомстве с предметно-ориентированными языками мы создали простой макрос \verb"unit-of-time". Этот макрос дал нам удобный способ определения периодов времени в различных величинах с помощью основанного на символах, интуитивно-понятного синтаксиса:
 
 \begin{verbatim}
-* (unit-of-time 1 d)
+CL-USER> (unit-of-time 1 d)
 86400
 \end{verbatim}
 
@@ -74,11 +83,11 @@
 
 \begin{verbatim}
 (defunits% time s
-m 60
-h 3600
-d 86400
-ms 1/1000
-us 1/ 1000000)
+  m 60
+  h 3600
+  d 86400
+  ms 1/1000
+  us 1/ 1000000)
 \end{verbatim}
 
 \verb"Defunits%" может расшириться в код, определяющий макрос, подобный \verb"unit-of-time", написанный нами в \emph{разделе Предметно - Ориентированные Языки}, что позволяет нам преобразовывать произвольные единицы времени в секунды. Можно ли ещё более улучшить этот код?
@@ -89,11 +98,11 @@ us 1/ 1000000)
 
 \begin{verbatim}
 (defunits%% time s
-m 60
-h (60 m)
-d (24 h)
-ms (1/1000 s)
-us (1/1000 ms))
+  m 60
+  h (60 m)
+  d (24 h)
+  ms (1/1000 s)
+  us (1/1000 ms))
 \end{verbatim}
 
 \emph{Связывание (chaining)} единиц измерений выглядит естественной операцией. Минуты определены в терминах наших базовых единиц, секунд, часы - в терминах минут, и дни - в терминах часов. Реализуя наш макрос в итеративном стиле мы, для начала, реализуем несвязываемое поведение с \verb"defunits%", после этого мы реализуем связывание с \verb"defunits%%" ещё до добавления соответствующих проверок на ошибки и переходу к реализации финальной версии, \verb"defunits".
@@ -106,13 +115,13 @@ us (1/1000 ms))
 \listbegin
 \begin{verbatim}
 (defmacro! defunits% (quantity base-unit &rest units)
-`(defmacro ,(symb 'unit-of- quantity) (,g!val ,g!un)
-`(* ,,g!val
-,(case ,g!un
-((,base-unit) 1)
-,@(mapcar (lambda (x)
-`((,(car x)) ,(cadr x)))
-(group units 2))))))
+  `(defmacro ,(symb 'unit-of- quantity) (,g!val ,g!un)
+     `(* ,,g!val
+         ,(case ,g!un
+                ((,base-unit) 1)
+                ,@(mapcar (lambda (x)
+                            `((,(car x)) ,(cadr x)))
+                          (group units 2))))))
 \end{verbatim}
 \listend
 
@@ -126,16 +135,16 @@ us (1/1000 ms))
 \listbegin
 \begin{verbatim}
 (defun defunits-chaining% (u units)
-(let ((spec (find u units :key #'car)))
-(if (null spec)
-(error "Unknown unit ~a" u)
-(let ((chain (cadr spec)))
-(if (listp chain)
-(* (car chain)
-(defunits-chaining%
-(cadr chain)
-units))
-chain)))))
+  (let ((spec (find u units :key #'car)))
+    (if (null spec)
+        (error "Unknown unit ~a" u)
+        (let ((chain (cadr spec)))
+          (if (listp chain)
+              (* (car chain)
+                 (defunits-chaining%
+                     (cadr chain)
+                     units))
+              chain)))))
 \end{verbatim}
 \listend
 
@@ -147,17 +156,17 @@ chain)))))
 \listbegin
 \begin{verbatim}
 (defmacro! defunits%% (quantity base-unit &rest units)
-`(defmacro ,(symb 'unit-of- quantity) (,g!val ,g!un)
-`(* ,,g!val
-,(case ,g!un
-((,base-unit) 1)
-,@(mapcar (lambda (x)
-`((,(car x))
-,(defunits-chaining%
-(car x)
-(cons `(,base-unit 1)
-(group units 2)))))
-(group units 2))))))
+  `(defmacro ,(symb 'unit-of- quantity) (,g!val ,g!un)
+     `(* ,,g!val
+         ,(case ,g!un
+                ((,base-unit) 1)
+                ,@(mapcar (lambda (x)
+                            `((,(car x))
+                              ,(defunits-chaining%
+                                (car x)
+                                (cons `(,base-unit 1)
+                                      (group units 2)))))
+                          (group units 2))))))
 \end{verbatim}
 \listend
 
@@ -169,8 +178,8 @@ chain)))))
 
 \begin{verbatim}
 (defunits time s
-m (1/60 h)
-h (60 m))
+  m (1/60 h)
+  h (60 m))
 \end{verbatim}
 
 Для того, чтобы добавить соответствующий отладочный вывод, мы должны несколько улучшить нашу реализацию. Наша окончательная версия \verb"defunits" поддерживает очередизацию и печатает удобный отладочный вывод указывающий пользователю на наличие подобных циклических зависимостей. Всё это благодаря \verb"defunits-chaining", улучшенной версии \verb"defunits-chaining%" работающей со списком ранее встреченных единиц. Таким образом, если мы повторно столкнёмся с уже существующей в списке единицей, то мы можем выдать ошибку, которая лаконично описывает проблему:
@@ -179,45 +188,45 @@ h (60 m))
 \listbegin
 \begin{verbatim}
 (defun defunits-chaining (u units prev)
-(if (member u prev)
-(error "~{ ~a~^ depends on~}"
-(cons u prev)))
-(let ((spec (find u units :key #'car)))
-(if (null spec)
-(error "Unknown unit ~a" u)
-(let ((chain (cadr spec)))
-(if (listp chain)
-(* (car chain)
-(defunits-chaining
-(cadr chain)
-units
-(cons u prev)))
-chain)))))
+  (if (member u prev)
+      (error "~{ ~a~^ depends on~}"
+             (cons u prev)))
+  (let ((spec (find u units :key #'car)))
+    (if (null spec)
+        (error "Unknown unit ~a" u)
+        (let ((chain (cadr spec)))
+          (if (listp chain)
+              (* (car chain)
+                 (defunits-chaining
+                     (cadr chain)
+                     units
+                   (cons u prev)))
+              chain)))))
 
 (defmacro! defunits (quantity base-unit &rest units)
-`(defmacro ,(symb 'unit-of- quantity)
-(,g!val ,g!un)
-`(* ,,g!val
-,(case ,g!un
-((,base-unit) 1)
-,@(mapcar (lambda (x)
-`((,(car x))
-,(defunits-chaining
-(car x)
-(cons
-`(,base-unit 1)
-(group units 2))
-nil)))
-(group units 2))))))
+  `(defmacro ,(symb 'unit-of- quantity)
+       (,g!val ,g!un)
+     `(* ,,g!val
+         ,(case ,g!un
+                ((,base-unit) 1)
+                ,@(mapcar (lambda (x)
+                            `((,(car x))
+                              ,(defunits-chaining
+                                (car x)
+                                (cons
+                                 `(,base-unit 1)
+                                 (group units 2))
+                                nil)))
+                          (group units 2))))))
 \end{verbatim}
 \listend
 
 \begin{verbatim}
-* (defunits time s
-m (1/60 h)
-h (60 m))
-Error in function DEFUNITS-CHAINING:
-M depends on H depends on M
+CL-USER> (defunits time s
+           m (1/60 h)
+           h (60 m))
+ M depends on H depends on M
+   [Condition of type SIMPLE-ERROR]
 \end{verbatim}
 
 Макрос defunits идентичен \verb"defunits%%" за исключением того, что он передаёт дополнительный аргумент \verb"nil" функции \verb"defunits-chaining", являющийся концом списка, отображающего историю уже посещённых единиц. Если при поиске новой единицы мы обнаружим что уже встречали её, то это обозначает обнаружение цикла. Мы можем использовать эту историю посещённых единиц для печати вспомогательных сообщений пользователям макросов, написавших циклы.
@@ -227,8 +236,8 @@ M depends on H depends on M
 Примером использования \verb"defunits" является \verb"unit-of-distance" (единицы - расстояния). В 1970 году морская сажень сократилась, по крайней мере для британских моряков, на 1/76 часть:
 
 \begin{verbatim}
-* (/ (unit-of-distance 1 fathom)
-(unit-of-distance 1 old-brit-fathom))
+CL-USER> (/ (unit-of-distance 1 fathom)
+            (unit-of-distance 1 old-brit-fathom))
 75/76
 \end{verbatim}
 
@@ -236,36 +245,36 @@ M depends on H depends on M
 \listbegin
 \begin{verbatim}
 (defunits distance m
-km 1000
-cm 1/100
-mm (1/10 cm)
-nm (1/1000 mm)
+  km 1000
+  cm 1/100
+  mm (1/10 cm)
+  nm (1/1000 mm)
 
-yard 9144/10000 ; Принято в 1956
-foot (1/3 yard)
-inch (1/12 foot)
-mile (1760 yard)
-furlong (1/8 mile)
+  yard 9144/10000 ; Принято в 1956
+  foot (1/3 yard)
+  inch (1/12 foot)
+  mile (1760 yard)
+  furlong (1/8 mile)
 
-fathom (2 yard) ; Принято в 1929
-nautical-mile 1852
-cable (1/10 nautical-mile)
-
-old-brit-nautical-mile ; Отменено в 1970
-(6080/3 yard)
-old-brit-cable
-(1/10 old-brit-nautical-mile)
-old-brit-fathom
-(1/100 old-brit-cable))
+  fathom (2 yard) ; Принято в 1929
+  nautical-mile 1852
+  cable (1/10 nautical-mile)
+  
+  old-brit-nautical-mile ; Отменено в 1970
+  (6080/3 yard)
+  old-brit-cable
+  (1/10 old-brit-nautical-mile)
+  old-brit-fathom
+  (1/100 old-brit-cable))
 \end{verbatim}
 \listend
 
 Что чуть больше 2-х сантиметров:
 
 \begin{verbatim}
-* (coerce
-(unit-of-distance 1/76 old-brit-fathom)
-’float)
+CL-USER> (coerce
+          (unit-of-distance 1/76 old-brit-fathom)
+          'float)
 0.024384
 \end{verbatim}
 
