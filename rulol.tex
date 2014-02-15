@@ -6,6 +6,7 @@
 \usepackage{textcomp}
 \usepackage[pdftex]{graphicx}
 \graphicspath{{cover/}}
+\usepackage{pdfpages}
 \usepackage[pdfborder={0 0 0}]{hyperref}
 \title{Let Over Lambda \\50 Лет Лиспу}
 \date{2013.11.02}
@@ -17,11 +18,9 @@
 \newcommand{\listend} {\hrule\vspace{1cm}}
 
 
-\thispagestyle{empty}
+%\thispagestyle{empty}
+\includepdf[pages={1}]{cover/first_page.pdf}
 
-\begin{figure}[ht]
-\includegraphics[width=1\linewidth]{first_page}
-\end{figure}
 
 
 %\pagestyle{headings}
@@ -33,6 +32,7 @@
 \maketitle
 \begin{center}
 {\LARGE $\lambda$}
+
 
 Let Over Lambda
 
@@ -69,9 +69,7 @@ doug@hcsw.org
 \input{read_macros}
 \input{programs_that_program}
 
-\newpage \thispagestyle{empty}
-\begin{figure}[ht]
-\includegraphics[width=1\linewidth]{last_page}
-\end{figure}
+\newpage 
+\includepdf[pages={1}]{cover/last_page.pdf}
 
 \end{document}
