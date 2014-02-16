@@ -297,22 +297,22 @@ CL-USER> (coerce
 \listbegin
 \begin{verbatim}
 (defun tree-leaves% (tree result)
-(if tree
-(if (listp tree)
-(cons
-(tree-leaves% (car tree)
-result)
-(tree-leaves% (cdr tree)
-result))
-result)))
+  (if tree
+      (if (listp tree)
+          (cons
+           (tree-leaves% (car tree)
+                         result)
+           (tree-leaves% (cdr tree)
+                         result))
+        result)))
 \end{verbatim}
 \listend
 \end{figure}
 
 \begin{verbatim}
-* (tree-leaves%
-’(2 (nil t (a . b)))
-’leaf)
+CL-USER> (tree-leaves%
+	  '(2 (nil t (a . b)))
+	  'leaf)
 (LEAF (NIL LEAF (LEAF . LEAF)))
 \end{verbatim}
 
@@ -321,19 +321,19 @@ result)))
 Конечно, изменение каждого элемента это весьма бесполезно. То что нам нужно на самом деле - так это возможность выбора определённых атомов и возможность избирательной трансформации их в новые атомы для последующей вставки в новую списковую структуру, оставляя неинтересные нам атомы без изменений. В лиспе самым лёгким способом является написание изменяемой функции-утилиты, дающей возможность применять \emph{плагины (plug-ins)} где пользователь может использовать произвольный код для контроля поведения утилиты. Примером этому может служить функция sort, включённая в COMMON LISP. В этом примере в функцию \verb"sort" подключена в виде плагина функция меньше чем:
 
 \begin{verbatim}
-*(sort ’(512438967) #’<)
-(123456789)
+CL-USER> (sort '(5 1 2 4 3 8 9 6 7) #'<)
+(1 2 3 4 5 6 7 8 9)
 \end{verbatim}
 
 \begin{figure}Листинг 5.7: PREDICATE-SPLITTER\label{listing_5.7}
 \listbegin
 \begin{verbatim}
 (defun predicate-splitter (orderp splitp)
-(lambda (a b)
-(let ((s (funcall splitp a)))
-(if (eq s (funcall splitp b))
-(funcall orderp a b)
-s))))
+  (lambda (a b)
+    (let ((s (funcall splitp a)))
+      (if (eq s (funcall splitp b))
+          (funcall orderp a b)
+        s))))
 \end{verbatim}
 \listend
 \end{figure}
@@ -345,23 +345,23 @@ s))))
 \verb"Predicate-splitter" - это простой пример комбинирования функции. Эта функция предназначена для комбинирования двух предикатов в один новый предикат. Первый предикат получает два аргумента предназначенных для упорядочивания элементов. Второй предикат получает один аргумент и определяет относится ли элемент к определённому классу элементов, которых вы хотите разделить с помощью вашего предиката. Например, ниже мы применили \verb"predicate-splitter" для создания нового предиката, работающего также, как и меньше чем, за исключением того, что чётные числа будут меньше чем нечётные числа:
 
 \begin{verbatim}
-* (sort ’(5 1 2 4 3 8 9 6 7)
-(predicate-splitter #’< #’evenp))
-(246813579)
+CL-USER> (sort '(5 1 2 4 3 8 9 6 7)
+               (predicate-splitter #'< #'evenp))
+(2 4 6 8 1 3 5 7 9)
 \end{verbatim}
 
 \begin{figure}Листинг 5.8: TREE-LEAVES-2\label{listing_5.8}
 \listbegin
 \begin{verbatim}
 (defun tree-leaves%% (tree test result)
-(if tree
-(if (listp tree)
-(cons
-(tree-leaves%% (car tree) test result)
-(tree-leaves%% (cdr tree) test result))
-(if (funcall test tree)
-(funcall result tree)
-tree))))
+  (if tree
+      (if (listp tree)
+          (cons
+           (tree-leaves%% (car tree) test result)
+           (tree-leaves%% (cdr tree) test result))
+        (if (funcall test tree)
+            (funcall result tree)
+          tree))))
 \end{verbatim}
 \listend
 \end{figure}
@@ -371,13 +371,22 @@ tree))))
 Мы можем использовать \verb"tree-leaves%%" передавая ему два лямбда выражения, каждое из которых должно получать единственный аргумент, \verb"x". В данном случае нам нужно получить новое дерево: с той же самой списковой структурой что и наш аргумент \verb"tree", за исключением того, что все чётные числа заменены на символ \verb"even-number":
 
 \begin{verbatim}
-* (tree-leaves%%
-’(1 2 (3 4 (5 6)))
-(lambda (x)
-(and (numberp x) (evenp x)))
-(lambda (x)
-’even-number))
-; Note: Variable X defined but never used.
+CL-USER> (tree-leaves%%
+          '(1 2 (3 4 (5 6)))
+          (lambda (x)
+            (and (numberp x) (evenp x)))
+          (lambda (x)
+            'even-number))
+; in: TREE-LEAVES%% '(1 2 (3 4 (5 6)))
+;     (LAMBDA (X) 'EVEN-NUMBER)
+; ==>
+;   #'(LAMBDA (X) 'EVEN-NUMBER)
+; 
+; caught STYLE-WARNING:
+;   The variable X is defined but never used.
+; 
+; compilation unit finished
+;   caught 1 STYLE-WARNING condition
 (1 EVEN-NUMBER (3 EVEN-NUMBER (5 EVEN-NUMBER)))
 \end{verbatim}
 
@@ -386,14 +395,14 @@ tree))))
 
 
 \begin{verbatim}
-* (tree-leaves%%
-’(1 2 (3 4 (5 6)))
-(lambda (x)
-(declare (ignorable x))
-(and (numberp x) (evenp x)))
-(lambda (x)
-(declare (ignorable x))
-’even-number))
+CL-USER> (tree-leaves%%
+          '(1 2 (3 4 (5 6)))
+          (lambda (x)
+            (declare (ignorable x))
+            (and (numberp x) (evenp x)))
+          (lambda (x)
+            (declare (ignorable x))
+            'even-number))
 (1 EVEN-NUMBER (3 EVEN-NUMBER (5 EVEN-NUMBER)))
 \end{verbatim}
 
@@ -407,14 +416,14 @@ tree))))
 \listbegin
 \begin{verbatim}
 (defmacro tree-leaves (tree test result)
-`(tree-leaves%%
-,tree
-(lambda (x)
-(declare (ignorable x))
-,test)
-(lambda (x)
-(declare (ignorable x))
-,result)))
+  `(tree-leaves%%
+    ,tree
+    (lambda (x)
+      (declare (ignorable x))
+      ,test)
+    (lambda (x)
+      (declare (ignorable x))
+      ,result)))
 \end{verbatim}
 \listend
 \end{figure}
@@ -422,10 +431,10 @@ tree))))
 При конструировании нашего неявного макроса, мы просто скопировали использование \verb"tree-leaves%%" из REPL-а прямо в определение \verb"tree-leaves", а части, которые должны изменяться в различных применениях макроса были параметризованы при помощи обратных кавычек. Теперь, благодаря этому макросу у нас есть менее многословный интерфейс использования утилиты \verb"tree-leaves%%". Конечно, этот интерфейс обособлен, поскольку есть множество путей, с помощью которых мы можем добиться подобного поведения. Однако, созданный нами макрос более интуитивен и более лёгок в применении, по крайней мере, в наших случаях. Макросы позволили нам создать эффективный программный интерфейс простым и лёгким способом, недоступным в других языках. Вот как мы можем применить наш макрос:
 
 \begin{verbatim}
-* (tree-leaves
-’(1 2 (3 4 (5 . 6)))
-(and (numberp x) (evenp x))
-’even-number)
+CL-USER> (tree-leaves
+          '(1 2 (3 4 (5 . 6)))
+          (and (numberp x) (evenp x))
+          'even-number)
 (1 EVEN-NUMBER (3 EVEN-NUMBER (5 . EVEN-NUMBER)))
 \end{verbatim}
 

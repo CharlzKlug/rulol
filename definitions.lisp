@@ -55,7 +55,65 @@
 				acc))
 		     (nreverse
 		      (cons source acc))))))
-      (if source (rec source nil) nil))))
+      (if source (rec source nil) nil)))
+  (defun defunits-chaining% (u units)
+  (let ((spec (find u units :key #'car)))
+    (if (null spec)
+	(error "Unknown unit ~a" u)
+	(let ((chain (cadr spec)))
+	  (if (listp chain)
+	      (* (car chain)
+		 (defunits-chaining%
+		     (cadr chain)
+		     units))
+	      chain)))))
+
+  (defun defunits-chaining (u units prev)
+  (if (member u prev)
+      (error "~{ ~a~^ depends on~}"
+	     (cons u prev)))
+  (let ((spec (find u units :key #'car)))
+    (if (null spec)
+	(error "Unknown unit ~a" u)
+	(let ((chain (cadr spec)))
+	  (if (listp chain)
+	      (* (car chain)
+		 (defunits-chaining
+		     (cadr chain)
+		     units
+		   (cons u prev)))
+	      chain)))))
+
+  (defun tree-leaves% (tree result)
+    (if tree
+	(if (listp tree)
+	    (cons
+	     (tree-leaves% (car tree)
+			   result)
+	     (tree-leaves% (cdr tree)
+			   result))
+	    result)))
+
+  
+  (defun predicate-splitter (orderp splitp)
+    (lambda (a b)
+      (let ((s (funcall splitp a)))
+	(if (eq s (funcall splitp b))
+	    (funcall orderp a b)
+	    s))))
+
+  
+(defun tree-leaves%% (tree test result)
+  (if tree
+      (if (listp tree)
+	  (cons
+	   (tree-leaves%% (car tree) test result)
+	   (tree-leaves%% (cdr tree) test result))
+	  (if (funcall test tree)
+	      (funcall result tree)
+	      tree))))
+
+)
 
 (defmacro defmacro! (name args &rest body)
   (let* ((os (remove-if-not #'o!-symbol-p args))
@@ -163,17 +221,6 @@
 			    `((,(car x)) ,(cadr x)))
 			  (group units 2))))))
 
-(defun defunits-chaining% (u units)
-  (let ((spec (find u units :key #'car)))
-    (if (null spec)
-	(error "Unknown unit ~a" u)
-	(let ((chain (cadr spec)))
-	  (if (listp chain)
-	      (* (car chain)
-		 (defunits-chaining%
-		     (cadr chain)
-		     units))
-	      chain)))))
 
 (defmacro! defunits%% (quantity base-unit &rest units)
   `(defmacro ,(symb 'unit-of- quantity) (,g!val ,g!un)
@@ -188,21 +235,7 @@
 				      (group units 2)))))
 			  (group units 2))))))
 
-(defun defunits-chaining (u units prev)
-  (if (member u prev)
-      (error "~{ ~a~^ depends on~}"
-	     (cons u prev)))
-  (let ((spec (find u units :key #'car)))
-    (if (null spec)
-	(error "Unknown unit ~a" u)
-	(let ((chain (cadr spec)))
-	  (if (listp chain)
-	      (* (car chain)
-		 (defunits-chaining
-		     (cadr chain)
-		     units
-		   (cons u prev)))
-	      chain)))))
+
 
 (defmacro! defunits (quantity base-unit &rest units)
   `(defmacro ,(symb 'unit-of- quantity)
@@ -242,3 +275,13 @@
   (1/10 old-brit-nautical-mile)
   old-brit-fathom
   (1/100 old-brit-cable))
+
+(defmacro tree-leaves (tree test result)
+  `(tree-leaves%%
+    ,tree
+    (lambda (x)
+      (declare (ignorable x))
+      ,test)
+    (lambda (x)
+      (declare (ignorable x))
+      ,result)))
