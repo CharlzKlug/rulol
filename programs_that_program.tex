@@ -566,19 +566,19 @@ CL-USER> (tree-leaves
 Особенно удобно иметь эти предварительно определённые комбинации \verb"car" и \verb"cdr" доступными для функций, получающих аргумент доступа \verb":key", в качестве такой функции можно привести \verb"find":
 
 \begin{verbatim}
-* (find ’a
-’(((a b) (c d)) ((c d) (b a)))
-:key #’cadadr)
-((c D) (B A))
+CL-USER> (find 'a
+               '(((a b) (c d)) ((c d) (b a)))
+               :key #'cadadr)
+((C D) (B A))
 \end{verbatim}
 
 Использование предварительно определённого \verb"cadadr" является более коротким чем создание эквивалентного лямбда выражения из комбинаций англоязычных операторов получения доступа:
 
 \begin{verbatim}
-* (find ’a
-’(((a b) (c d)) ((c d) (b a)))
-:key (lambda (e)
-(second (second e))))
+CL-USER> (find 'a
+               '(((a b) (c d)) ((c d) (b a)))
+               :key (lambda (e)
+                      (second (second e))))
 ((C D) (B A))
 \end{verbatim}
 
@@ -594,16 +594,16 @@ CL-USER> (tree-leaves
 \listbegin
 \begin{verbatim}
 (defmacro cxr% (x tree)
-(if (null x)
-tree
-`(,(cond
-((eq 'a (cadr x)) 'car)
-((eq 'd (cadr x)) 'cdr)
-(t (error "Non A/D symbol")))
-,(if (= 1 (car x))
-`(cxr% ,(cddr x) ,tree)
-`(cxr% ,(cons (- (car x) 1) (cdr x))
-,tree)))))
+  (if (null x)
+      tree
+      `(,(cond
+          ((eq 'a (cadr x)) 'car)
+          ((eq 'd (cadr x)) 'cdr)
+          (t (error "Non A/D symbol")))
+         ,(if (= 1 (car x))
+              `(cxr% ,(cddr x) ,tree)
+              `(cxr% ,(cons (- (car x) 1) (cdr x))
+                     ,tree)))))
 \end{verbatim}
 \listend
 \end{figure}
@@ -616,7 +616,7 @@ tree
 
 \begin{verbatim}
 (defun eleventh (x)
-(cxr% (1 a 10 d) x))
+  (cxr% (1 a 10 d) x))
 \end{verbatim}
 
 Цель этого раздела - проиллюстрировать жизненное использование \emph{рекурсивных расширений (recursive expansions)}. Рекурсивное расширение происходит тогда, когда макрос расширяет форму в новую форму, которая в свою очередь содержит использование макроса. Как и все рекурсии этот процесс должен завершиться при достижении \emph{базового случая (base case)}. К счастью в конце концов макрос раскроется в форму, которая не будет содержать использования макроса и раскрытие будет завершено.
@@ -624,9 +624,8 @@ tree
 Здесь мы применяем macroexpand к примеру с макросом \verb"cxr%" и получаем форму, которая также использует \verb"cxr%":
 
 \begin{verbatim}
-* (macroexpand
-'(cxr% (1 a 2 d) some-list))
-
+CL-USER> (macroexpand
+          '(cxr% (1 a 2 d) some-list))
 (CAR (CXR% (2 D) SOME-LIST))
 T
 \end{verbatim}
@@ -634,9 +633,8 @@ T
 После применения \verb"macroexpand" к новой рекурсивной форме мы получим ещё одну рекурсию:
 
 \begin{verbatim}
-* (macroexpand
-'(CXR% (2 D) SOME-LIST))
-
+CL-USER> (macroexpand
+          '(cxr% (2 d) some-list))
 (CDR (CXR% (1 D) SOME-LIST))
 T
 \end{verbatim}
@@ -646,9 +644,8 @@ T
 
 
 \begin{verbatim}
-* (macroexpand
-'(CXR% (1 D) SOME-LIST))
-
+CL-USER> (macroexpand
+          '(cxr% (1 d) some-list))
 (CDR (CXR% NIL SOME-LIST))
 T
 \end{verbatim}
@@ -656,9 +653,8 @@ T
 Оператор получения доступа в виде пустого списка - это наш базовый случай и он расширяется непосредственно в список над которым мы производим наши операции:
 
 \begin{verbatim}
-* (macroexpand
-'(CXR% NIL SOME-LIST))
-
+CL-USER> (macroexpand
+          '(cxr% nil some-list))
 SOME-LIST
 T
 \end{verbatim}
@@ -667,8 +663,7 @@ T
 
 \begin{verbatim}
 * (walker:macroexpand-all
-'(cxr% (1 a 2 d) some-list))
-
+   '(cxr% (1 a 2 d) some-list))
 (CAR (CDR (CDR SOME-LIST)))
 \end{verbatim}
 
@@ -692,40 +687,40 @@ T
 (defvar cxr-inline-thresh 10)
 
 (defmacro! cxr (x tree)
-(if (null x)
-tree
-(let ((op (cond
-((eq 'a (cadr x)) 'car)
-((eq 'd (cadr x)) 'cdr)
-(t (error "Non A/D symbol")))))
-(if (and (integerp (car x))
-(<= 1 (car x) cxr-inline-thresh))
-(if (= 1 (car x))
-`(,op (cxr ,(cddr x) ,tree))
-`(,op (cxr ,(cons (- (car x) 1) (cdr x))
-,tree)))
-`(nlet-tail
-,g!name ((,g!count ,(car x))
-(,g!val (cxr ,(cddr x) ,tree)))
-(if (>= 0 ,g!count)
-,g!val
-;; Будет хвостом:
-(,g!name (- ,g!count 1)
-(,op ,g!val))))))))
+  (if (null x)
+      tree
+      (let ((op (cond
+                  ((eq 'a (cadr x)) 'car)
+                  ((eq 'd (cadr x)) 'cdr)
+                  (t (error "Non A/D symbol")))))
+        (if (and (integerp (car x))
+                 (<= 1 (car x) cxr-inline-thresh))
+            (if (= 1 (car x))
+                `(,op (cxr ,(cddr x) ,tree))
+                `(,op (cxr ,(cons (- (car x) 1) (cdr x))
+                           ,tree)))
+            `(nlet-tail
+              ,g!name ((,g!count ,(car x))
+                       (,g!val (cxr ,(cddr x) ,tree)))
+              (if (>= 0 ,g!count)
+                  ,g!val
+                  ;; Будет хвостом:
+                  (,g!name (- ,g!count 1)
+                           (,op ,g!val))))))))
 \end{verbatim}
 \listend
 \end{figure}
 
 \begin{verbatim}
 (defun nthcdr% (n list)
-(cxr (n d) list))
+  (cxr (n d) list))
 \end{verbatim}
 
 И, аналогично, \verb"nth":
 
 \begin{verbatim}
 (defun nth% (n list)
-(cxr (1 a n d) list))
+  (cxr (1 a n d) list))
 \end{verbatim}
 
 Поскольку макросы пишутся в итеративном, послойном процессе, то часто у нас появляется возможность \emph{комбинировать} или \emph{сочетать} ранее созданные макросы. Например, в определении \verb"cxr" наше альтернативное расширение использует макрос \verb"nlet-tail" ранее созданный в предыдущем разделе. \verb"Nlet-tail" удобен тем, что позволяет нам задавать имена итерационным конструкциям, а поскольку мы планируем итерацию с помощью хвостовых вызовов, то мы с уверенностью можем использовать эту итерацию для того, чтобы избежать избыточного потрбеления стека.
@@ -733,17 +728,15 @@ tree
 Вот как расширяется \verb"cxr" в \verb"nthcdr%":
 
 \begin{verbatim}
-* (macroexpand
-'(cxr (n d) list))
-
+CL-USER> (macroexpand
+          '(cxr (n d) list))
 (LET ()
-(NLET-TAIL #:NAME1632
-((#:COUNT1633 N)
-(#:VAL1634 (CXR NIL LIST)))
-(IF (>= 0 #:COUNT1633)
-#:VAL1634
-(#:NAME1632 (- #:COUNT1633 1)
-(CDR #:VAL1634)))))
+     (NLET-TAIL #:NAME1271 ((#:COUNT1272 N) (#:VAL1273 
+                                             (CXR NIL LIST)))
+                (IF (>= 0 #:COUNT1272)
+                    #:VAL1273
+                    (#:NAME1271 (- #:COUNT1272 1) 
+                                (CDR #:VAL1273)))))
 T
 \end{verbatim}
 
@@ -752,26 +745,23 @@ T
 Макросы могут создавать гибкие расширения видимые пользователем макроса, поэтому нам доступны такие способы прозрачных спецификаций, которые не возможны в других языках. Например, из архитектуры \verb"cxr" следует что параметры предшествующие символам \verb"A" и \verb"D", являющиеся целочисленными и меньшими чем \verb"cxr-inline-thresh" будут встроены как вызовы \verb"car" и \verb"cdr":
 
 \begin{verbatim}
-* (macroexpand '(cxr (9 d) list))
-
+CL-USER> (macroexpand '(cxr (9 d) list))
 (LET ()
-(CDR (CXR (8 D) LIST)))
+  (CDR (CXR (8 D) LIST)))
 T
 \end{verbatim}
 
 Но, благодаря прозрачной спецификации \verb"cxr" мы можем передавать значения не являющиеся целочисленными, но, после вычисления преобразующиеся в целочисленное значение. При выполнении этой операции мы знаем что в данном случае не происходит никаких встраиваний, поскольку результатом макроса является \verb"nlet-tail" расширение. Простейшая форма, которая вычисляется в целочисленное значение - это закавыченное целочисленное значение:
 
 \begin{verbatim}
-* (macroexpand '(cxr ('9 d) list))
-
+CL-USER> (macroexpand '(cxr ('9 d) list))
 (LET ()
-(NLET-TAIL #:NAME1638
-((#:COUNT1639 '9)
-(#:VAL1640 (CXR NIL LIST)))
-(IF (>= 0 #:COUNT1639)
-#:VAL1640
-(#:NAME1638 (- #:COUNT1639 1)
-(CDR #:VAL1640)))))
+  (NLET-TAIL #:NAME1277 ((#:COUNT1278 '9) (#:VAL1279 
+                                           (CXR NIL LIST)))
+             (IF (>= 0 #:COUNT1278)
+                 #:VAL1279
+                 (#:NAME1277 (- #:COUNT1278 1) 
+                             (CDR #:VAL1279)))))
 T
 \end{verbatim}
 

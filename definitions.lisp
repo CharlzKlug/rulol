@@ -294,10 +294,10 @@
 	    `(progn
 	       (psetq
 		,@(apply #'nconc
-			   (mapcar
-			    #'list
-			      ',(mapcar #'car letargs)
-			       (list ,@gs))))
+			 (mapcar
+			  #'list
+			  ',(mapcar #'car letargs)
+			  (list ,@gs))))
 	       (go ,',g!n))))
        (block ,g!b
 	 (let ,letargs
@@ -310,3 +310,48 @@
 	     (if (zerop n)
 		 acc
 		 (fact (- n 1) (* acc n)))))
+
+(defmacro cxr% (x tree)
+  (if (null x)
+      tree
+      `(,(cond
+	  ((eq 'a (cadr x)) 'car)
+	  ((eq 'd (cadr x)) 'cdr)
+	  (t (error "Non A/D symbol")))
+	 ,(if (= 1 (car x))
+	      `(cxr% ,(cddr x) ,tree)
+	      `(cxr% ,(cons (- (car x) 1) (cdr x))
+		     ,tree)))))
+
+(defun eleventh (x)
+  (cxr% (1 a 10 d) x))
+
+(defvar cxr-inline-thresh 10)
+
+(defmacro! cxr (x tree)
+  (if (null x)
+      tree
+      (let ((op (cond
+		  ((eq 'a (cadr x)) 'car)
+		  ((eq 'd (cadr x)) 'cdr)
+		  (t (error "Non A/D symbol")))))
+	(if (and (integerp (car x))
+		 (<= 1 (car x) cxr-inline-thresh))
+	    (if (= 1 (car x))
+		`(,op (cxr ,(cddr x) ,tree))
+		`(,op (cxr ,(cons (- (car x) 1) (cdr x))
+			   ,tree)))
+	    `(nlet-tail
+	      ,g!name ((,g!count ,(car x))
+		       (,g!val (cxr ,(cddr x) ,tree)))
+	      (if (>= 0 ,g!count)
+		  ,g!val
+		  ;; Будет хвостом:
+		  (,g!name (- ,g!count 1)
+			   (,op ,g!val))))))))
+
+(defun nthcdr% (n list)
+  (cxr (n d) list))
+
+(defun nth% (n list)
+  (cxr (1 a n d) list))
