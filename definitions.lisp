@@ -103,17 +103,16 @@
 	    s))))
 
   
-(defun tree-leaves%% (tree test result)
-  (if tree
-      (if (listp tree)
-	  (cons
-	   (tree-leaves%% (car tree) test result)
-	   (tree-leaves%% (cdr tree) test result))
-	  (if (funcall test tree)
-	      (funcall result tree)
-	      tree))))
-
-)
+  (defun tree-leaves%% (tree test result)
+    (if tree
+	(if (listp tree)
+	    (cons
+	     (tree-leaves%% (car tree) test result)
+	     (tree-leaves%% (cdr tree) test result))
+	    (if (funcall test tree)
+		(funcall result tree)
+		tree))))
+  (defvar cxr-inline-thresh 10))
 
 (defmacro defmacro! (name args &rest body)
   (let* ((os (remove-if-not #'o!-symbol-p args))
@@ -326,7 +325,7 @@
 (defun eleventh (x)
   (cxr% (1 a 10 d) x))
 
-(defvar cxr-inline-thresh 10)
+
 
 (defmacro! cxr (x tree)
   (if (null x)
@@ -354,4 +353,83 @@
   (cxr (n d) list))
 
 (defun nth% (n list)
+  (declare (ignorable n list))
   (cxr (1 a n d) list))
+
+(defmacro def-english-list-accessors (start end)
+  (if (not (<= 1 start end))
+      (error "Bad start/end range"))
+  `(progn
+     ,@(loop for i from start to end collect
+	    `(defun
+		 ,(symb
+		   (map 'string
+			(lambda (c)
+			  (if (alpha-char-p c)
+			      (char-upcase c)
+			      #\-))
+			(format nil "~:r" i)))
+		 (arg)
+	       (cxr (1 a ,(- i 1) d) arg)))))
+
+(defun cxr-calculator (n)
+  (loop for i from 1 to n
+     sum (expt 2 i)))
+
+(defun cxr-symbol-p (s)
+  (if (symbolp s)
+      (let ((chars (coerce
+		    (symbol-name s)
+		    'list)))
+	(and
+	 (< 6 (length chars))
+	 (char= #\C (car chars))
+	 (char= #\R (car (last chars)))
+	 (null (remove-if
+		(lambda (c)
+		  (or (char= c #\A)
+		      (char= c #\D)))
+		(cdr (butlast chars))))))))
+
+(defun cxr-symbol-to-cxr-list (s)
+  (labels ((collect (l)
+	     (if l
+		 (list*
+		  1
+		  (if (char= (car l) #\A)
+		      'A
+		      'D)
+		  (collect (cdr l))))))
+    (collect
+	(cdr ; chop off C
+	 (butlast ; chop off R
+	  (coerce
+	   (symbol-name s)
+	   'list))))))
+
+(defmacro with-all-cxrs (&rest forms)
+  `(labels
+       (,@(mapcar
+	   (lambda (s)
+	     `(,s (l)
+		  (cxr ,(cxr-symbol-to-cxr-list s)
+		       l)))
+	   (remove-duplicates
+	    (remove-if-not
+	     #'cxr-symbol-p
+	     (flatten forms)))))
+     ,@forms))
+
+(defmacro! dlambda (&rest ds)
+  `(lambda (&rest ,g!args)
+     (case (car ,g!args)
+       ,@(mapcar
+	  (lambda (d)
+	    `(,(if (eq t (car d))
+		   t
+		   (list (car d)))
+	       (apply (lambda ,@(cdr d))
+		      ,(if (eq t (car d))
+			   g!args
+			   `(cdr ,g!args)))))
+	  ds))))

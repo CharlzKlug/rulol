@@ -775,20 +775,20 @@ T
 \listbegin
 \begin{verbatim}
 (defmacro def-english-list-accessors (start end)
-(if (not (<= 1 start end))
-(error "Bad start/end range"))
-`(progn
-,@(loop for i from start to end collect
-`(defun
-,(symb
-(map 'string
-(lambda (c)
-(if (alpha-char-p c)
-(char-upcase c)
-#\-))
-(format nil "~:r" i)))
-(arg)
-(cxr (1 a ,(- i 1) d) arg)))))
+  (if (not (<= 1 start end))
+      (error "Bad start/end range"))
+  `(progn
+     ,@(loop for i from start to end collect
+            `(defun
+                 ,(symb
+                   (map 'string
+                        (lambda (c)
+                          (if (alpha-char-p c)
+                              (char-upcase c)
+                              #\-))
+                        (format nil "~:r" i)))
+                 (arg)
+               (cxr (1 a ,(- i 1) d) arg)))))
 \end{verbatim}
 \listend
 \end{figure}
@@ -804,20 +804,18 @@ T
 И наконец, мы можем самостоятельно определить необходимые отсутствующие операторы. Обычно в других языках это обозначает множество операций копирования-вставки или могут быть некоторые кодогенерирующие сценарии, обрабатывающие некоторые специальные случаи - в любом случае оба варианта не элегантны. Но в лиспе у нас есть макросы:
 
 \begin{verbatim}
-* (macroexpand
-'(def-english-list-accessors 11 20))
-
+CL-USER> (macroexpand '(def-english-list-accessors 11 20))
 (PROGN
-(DEFUN ELEVENTH (ARG) (CXR (1 A 10 D) ARG))
-(DEFUN TWELFTH (ARG) (CXR (1 A 11 D) ARG))
-(DEFUN THIRTEENTH (ARG) (CXR (1 A 12 D) ARG))
-(DEFUN FOURTEENTH (ARG) (CXR (1 A 13 D) ARG))
-(DEFUN FIFTEENTH (ARG) (CXR (1 A 14 D) ARG))
-(DEFUN SIXTEENTH (ARG) (CXR (1 A 15 D) ARG))
-(DEFUN SEVENTEENTH (ARG) (CXR (1 A 16 D) ARG))
-(DEFUN EIGHTEENTH (ARG) (CXR (1 A 17 D) ARG))
-(DEFUN NINETEENTH (ARG) (CXR (1 A 18 D) ARG))
-(DEFUN TWENTIETH (ARG) (CXR (1 A 19 D) ARG)))
+ (DEFUN ELEVENTH (ARG) (CXR (1 A 10 D) ARG))
+ (DEFUN TWELFTH (ARG) (CXR (1 A 11 D) ARG))
+ (DEFUN THIRTEENTH (ARG) (CXR (1 A 12 D) ARG))
+ (DEFUN FOURTEENTH (ARG) (CXR (1 A 13 D) ARG))
+ (DEFUN FIFTEENTH (ARG) (CXR (1 A 14 D) ARG))
+ (DEFUN SIXTEENTH (ARG) (CXR (1 A 15 D) ARG))
+ (DEFUN SEVENTEENTH (ARG) (CXR (1 A 16 D) ARG))
+ (DEFUN EIGHTEENTH (ARG) (CXR (1 A 17 D) ARG))
+ (DEFUN NINETEENTH (ARG) (CXR (1 A 18 D) ARG))
+ (DEFUN TWENTIETH (ARG) (CXR (1 A 19 D) ARG)))
 T
 \end{verbatim}
 
@@ -829,8 +827,8 @@ T
 \listbegin
 \begin{verbatim}
 (defun cxr-calculator (n)
-(loop for i from 1 to n
-sum (expt 2 i)))
+  (loop for i from 1 to n
+     sum (expt 2 i)))
 \end{verbatim}
 \listend
 \end{figure}
@@ -840,19 +838,17 @@ sum (expt 2 i)))
 Мы видим что ANSI определяет 30 комбинаций:
 
 \begin{verbatim}
-* (cxr-calculator 4)
-
+CL-USER> (cxr-calculator 4)
 30
 \end{verbatim}
 
 А теперь покажем вам насколько быстро растёт число покрывающих функций:
 
 \begin{verbatim}
-* (loop for i from 1 to 16
-collect (cxr-calculator i))
-
-(2 6 14 30 62 126 254 510 1022 2046
-4094 8190 16382 32766 65534 131070)
+CL-USER> (loop for i from 1 to 16
+              collect (cxr-calculator i))
+(2 6 14 30 62 126 254 510 1022 2046 4094 8190 16382 32766 65534 
+   131070)
 \end{verbatim}
 
 Очевидно, что для покрытия всех комбинаций \verb|car| и \verb|cdr| с помощью \verb|cxr| функций нужен подход, отличающийся от того, что мы применили при решении проблемы с англоязычными операторами. Определение всех комбинаций \verb|car| и \verb|cdr| является недопустимым.
@@ -861,19 +857,19 @@ collect (cxr-calculator i))
 \listbegin
 \begin{verbatim}
 (defun cxr-symbol-p (s)
-(if (symbolp s)
-(let ((chars (coerce
-(symbol-name s)
-'list)))
-(and
-(< 6 (length chars))
-(char= #\C (car chars))
-(char= #\R (car (last chars)))
-(null (remove-if
-(lambda (c)
-(or (char= c #\A)
-(char= c #\D)))
-(cdr (butlast chars))))))))
+  (if (symbolp s)
+      (let ((chars (coerce
+                    (symbol-name s)
+                    'list)))
+        (and
+         (< 6 (length chars))
+         (char= #\C (car chars))
+         (char= #\R (car (last chars)))
+         (null (remove-if
+                (lambda (c)
+                 (or (char= c #\A)
+                     (char= c #\D)))
+               (cdr (butlast chars))))))))
 \end{verbatim}
 \listend
 \end{figure}
@@ -887,9 +883,8 @@ collect (cxr-calculator i))
 
 
 \begin{verbatim}
-* (cxr-symbol-to-cxr-list
-'caddadr)
-
+CL-USER> (cxr-symbol-to-cxr-list
+          'caddadr)
 (1 A 1 D 1 D 1 A 1 D)
 \end{verbatim}
 
@@ -899,20 +894,20 @@ collect (cxr-calculator i))
 \listbegin
 \begin{verbatim}
 (defun cxr-symbol-to-cxr-list (s)
-(labels ((collect (l)
-(if l
-(list*
-1
-(if (char= (car l) #\A)
-'A
-'D)
-(collect (cdr l))))))
-(collect
-(cdr ; chop off C
-(butlast ; chop off R
-(coerce
-(symbol-name s)
-'list))))))
+  (labels ((collect (l)
+             (if l
+                 (list*
+                  1
+                  (if (char= (car l) #\A)
+                      'A
+                      'D)
+                  (collect (cdr l))))))
+    (collect
+        (cdr ; отсечь C
+         (butlast ; отсечь R
+          (coerce
+           (symbol-name s)
+           'list))))))
 \end{verbatim}
 \listend
 \end{figure}
@@ -926,44 +921,39 @@ collect (cxr-calculator i))
 \listbegin
 \begin{verbatim}
 (defmacro with-all-cxrs (&rest forms)
-`(labels
-(,@(mapcar
-(lambda (s)
-`(,s (l)
-(cxr ,(cxr-symbol-to-cxr-list s)
-l)))
-(remove-duplicates
-(remove-if-not
-#'cxr-symbol-p
-(flatten forms)))))
-,@forms))
+  `(labels
+       (,@(mapcar
+           (lambda (s)
+             `(,s (l)
+                  (cxr ,(cxr-symbol-to-cxr-list s)
+                       l)))
+           (remove-duplicates
+            (remove-if-not
+             #'cxr-symbol-p
+             (flatten forms)))))
+     ,@forms))
 \end{verbatim}
 \listend
 \end{figure}
 
 \begin{verbatim}
-* (with-all-cxrs #'cadadadadadr)
-
-#<Interpreted Function>
+CL-USER> (with-all-cxrs #'cadadadadadr)
+#<FUNCTION (LABELS CADADADADADR) {CFCDA45}>
 \end{verbatim}
 
 Или, как показано в следующем расширении макроса, мы можем встраивать произвольно-сложный лисп код, использующий этот бесконечный класс:
 
 \begin{verbatim}
-* (macroexpand
-'(with-all-cxrs
-(cons
-(cadadadr list)
-(caaaaaaaar list))))
-
-(LABELS
-((CADADADR (L)
-(CXR (1 A 1 D 1 A 1 D 1 A 1 D) L))
-(CAAAAAAAAR (L)
-(CXR (1 A 1 A 1 A 1 A 1 A 1 A 1 A 1 A) L)))
-(CONS
-(CADADADR LIST)
-(CAAAAAAAAR LIST)))
+CL-USER> (macroexpand
+          '(with-all-cxrs
+            (cons
+             (cadadadr list)
+             (caaaaaaaar list))))
+(LABELS ((CADADADR (L)
+           (CXR (1 A 1 D 1 A 1 D 1 A 1 D) L))
+         (CAAAAAAAAR (L)
+           (CXR (1 A 1 A 1 A 1 A 1 A 1 A 1 A 1 A) L)))
+  (CONS (CADADADR LIST) (CAAAAAAAAR LIST)))
 T
 \end{verbatim}
 
@@ -979,12 +969,12 @@ T
 
 \begin{verbatim}
 (let ((count 0))
-(lambda (msg)
-(case msg
-((:inc)
-(incf count))
-((:dec)
-(decf count)))))
+  (lambda (msg)
+    (case msg
+      ((:inc)
+       (incf count))
+      ((:dec)
+       (decf count)))))
 \end{verbatim}
 
 Заметьте, что для обозначения сообщений мы выбрали символы \emph{ключевых слов (keyword symbols)}, это символы, начинаются с \verb":" и всегда вычисляются в самих себя. Ключевые слова удобны, поскольку нам не надо их закавычивать или экспортировать их из других пакетов, а ещё они интуитивны, поскольку они спроектированы для выполнения этих и других видов \emph{деструктуризации (destructuring)}. Часто в \verb"lambda" или \verb"defmacro" формах ключевые слова не разрушаются во время выполнения. Но, поскольку мы реализуем систему передачи сообщений, которая является одним из видов \emph{деструктуризации времени выполнения}, то операция обработки ключевых слов будет выполняться во время выполнения. Как мы уже обсуждали, деструктуризация символов - это эффективная операция: простое сравнение указателей. При компиляции нашего примера счётчика он может преобразоваться в следующий машинный код:
@@ -993,18 +983,18 @@ T
 \listbegin
 \begin{verbatim}
 (defmacro! dlambda (&rest ds)
-`(lambda (&rest ,g!args)
-(case (car ,g!args)
-,@(mapcar
-(lambda (d)
-`(,(if (eq t (car d))
-t
-(list (car d)))
-(apply (lambda ,@(cdr d))
-,(if (eq t (car d))
-g!args
-`(cdr ,g!args)))))
-ds))))
+  `(lambda (&rest ,g!args)
+     (case (car ,g!args)
+       ,@(mapcar
+          (lambda (d)
+            `(,(if (eq t (car d))
+                   t
+                   (list (car d)))
+               (apply (lambda ,@(cdr d))
+                      ,(if (eq t (car d))
+                           g!args
+                           `(cdr ,g!args)))))
+          ds))))
 \end{verbatim}
 \listend
 \end{figure}
@@ -1023,79 +1013,71 @@ ds))))
 \verb"Dlambda" спроектирована так, чтобы получать в качестве первого аргумента символ ключевого слова. В зависимости от использованного символа ключевого слова \verb"dlambda" будет выполнять соответствующий кусок кода. Например, наш любимый пример замыканий - простой счётчик - может быть расширен так, что инкрементирование и декрементирование счётчика будет происходить на основе первого элемента с использованием \verb"dlambda". Этот шаблон известен как \emph{let, окружающий dlambda (let over dlambda)}:
 
 \begin{verbatim}
-* (setf (symbol-function 'count-test)
-(let ((count 0))
-(dlambda
-(:inc () (incf count))
-(:dec () (decf count)))))
-
-#<Interpreted Function>
+CL-USER> (setf (symbol-function 'count-test)
+               (let ((count 0))
+                 (dlambda
+                  (:inc () (incf count))
+                  (:dec () (decf count)))))
+#<CLOSURE (LAMBDA (&REST #:ARGS0)) {D270B9D}>
 \end{verbatim}
 
 Мы можем инкрементировать
 
 \begin{verbatim}
-* (count-test :inc)
-
+CL-USER> (count-test :inc)
 1
 \end{verbatim}
 
 и декрементировать
 
 \begin{verbatim}
-* (count-test :dec)
-
+CL-USER> (count-test :dec)
 0
 \end{verbatim}
 
 замыкание зависит от первого переданного аргумента. И хотя в вышеприведённом счётчике \verb"let", окружающий \verb"dlambda", оставлен пустым, списки следующие за символами ключевых слов на самом деле являются списками \emph{лямбда деструктуризации (lambda destructuring)}. Каждый диспетчеризующий вариант, или другими словами каждый аргумент-ключевое-слово, могут обладать собственным лямбда деструктирующим списком, как это показано в следующем расширении замыкания - счётчика:
 
 \begin{verbatim}
-* (setf (symbol-function 'count-test)
-(let ((count 0))
-(dlambda
-(:reset () (setf count 0))
-(:inc (n) (incf count n))
-(:dec (n) (decf count n))
-(:bound (lo hi)
-(setf count
-(min hi
-(max lo
-count)))))))
-
-#<Interpreted Function>
+CL-USER> (setf (symbol-function 'count-test)
+               (let ((count 0))
+                 (dlambda
+                  (:reset () (setf count 0))
+                  (:inc (n) (incf count n))
+                  (:dec (n) (decf count n))
+                  (:bound (lo hi)
+                          (setf count
+                                (min hi
+                                     (max lo
+                                          count)))))))
+#<CLOSURE (LAMBDA (&REST #:ARGS0)) {D604B45}>
 \end{verbatim}
 
 Теперь у нас есть несколько возможных лямбда деструктурирующих списков, которые могут использоваться в зависимости от нашего первого аргумента. \verb":reset" не требует аргументов и восстанавливает начальное значение \verb"count" сбрасывая его в 0:
 
 \begin{verbatim}
-* (count-test :reset)
-
+CL-USER> (count-test :reset)
 0
 \end{verbatim}
 
 \verb":inc" и \verb":dec" оба получают числовой аргумент, \verb"n":
 
 \begin{verbatim}
-* (count-test :inc 100)
-
+CL-USER> (count-test :inc 100)
 100
 \end{verbatim}
 
 \verb":bound" проверяет находится ли значение \verb"count" между двумя \emph{граничными значениями}, \verb"lo" и \verb"hi". Если же значение \verb"count" окажется за указанными пределами, то значение \verb"count" будет установлено в ближайшее граничное значение:
 
 \begin{verbatim}
-* (count-test :bound -10 10)
-
+CL-USER> (count-test :bound -10 10)
 10
 \end{verbatim}
 
 Важная особенность \verb"dlambda" заключается в использовании лямбды для всех деструктуризаций так, чтобы сохранить полноценную проверку ошибок и поддержку отладки, предоставляемую нашей COMMON LISP средой. Например, если мы зададим \verb"count-test" только один аргумент, то мы получим ошибку непосредственно относящуюся к неверному \emph{числу аргументов (arity)} лямбда приложения:
 
 \begin{verbatim}
-* (count-test :bound -10)
-
-ERROR: Wrong argument count, wanted 2 and got 1.
+CL-USER> (count-test :bound -10)
+invalid number of arguments: 1
 \end{verbatim}
 
 Особенно когда \verb"dlambda" встроена в лексическое окружение, формирующее замыкание, \verb"dlambda" позволяет нам программировать - на объектно - ориентированном жаргоне - как бы создание объектов с несколькими \emph{методами (methods)}. \verb"Dlambda" предназначена для простого создания такой функциональности без необходимости отступления от синтаксиса и применения лямбды. \verb"Dlambda" по прежнему расширяется в единственную лямбда форму и, таким образом, результат вычисления \verb"dlambda" является тем же, что и результат вычисления \verb"lambda": \emph{анонимная функция (anonymous function)}, которая может быть сохранена, применена и что самое главное - использована как лямбда компонент лексического замыкания.
@@ -1105,23 +1087,22 @@ ERROR: Wrong argument count, wanted 2 and got 1.
 Если последний возможный метод задан символом \verb"t" вместо аргумента ключевое слово, то этот предоставленный метод будет вызываться тогда, когда не обнаружено ни одного метода для какого-либо аргумента в виде ключевого слова. Вот один искусственный пример:
 
 \begin{verbatim}
-* (setf (symbol-function 'dlambda-test)
-(dlambda
-(:something-special ()
-(format t "SPECIAL~%"))
-(t (&rest args)
-(format t "DEFAULT: ~a~%" args))))
-
-#<Interpreted Function>
+CL-USER> (setf (symbol-function 'dlambda-test)
+               (dlambda
+                (:something-special ()
+                                    (format t "SPECIAL~%"))
+                (t (&rest args)
+                   (format t "DEFAULT: ~a~%" args))))
+#<FUNCTION (LAMBDA (&REST #:ARGS0)) {B37D805}>
 \end{verbatim}
 
 С таким определением в большинстве случаев при вызове этой функции будет происходить срабатывание метода по-умолчанию. Наш метод по-умолчанию использует аргумент лямбда деструктуризации \verb"&rest" для получения всех доступных аргументов; в наших силах ограничить число полученных аргументов через использование более специфичных лямбда деструктурирующих параметров.
 
 \begin{verbatim}
-* (dlambda-test 1 2 3)
+CL-USER> (dlambda-test 1 2 3)
 DEFAULT: (1 2 3)
 NIL
-* (dlambda-test)
+CL-USER> (dlambda-test)
 DEFAULT: NIL
 NIL
 \end{verbatim}
@@ -1129,7 +1110,7 @@ NIL
 Однако, несмотря на то, что эта анонимная функция в основном работает также, как и обычная лямбда форма с методом по умолчанию, мы можем передавать анонимной функции аргумент в виде ключевого слова для вызова специального метода.
 
 \begin{verbatim}
-* (dlambda-test :something-special)
+CL-USER> (dlambda-test :something-special)
 SPECIAL
 NIL
 \end{verbatim}
