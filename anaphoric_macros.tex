@@ -15,8 +15,8 @@
 \begin{verbatim}
 ;; alambda Грэма
 (defmacro alambda (parms &body body)
-`(labels ((self ,parms ,@body))
-#'self))
+  `(labels ((self ,parms ,@body))
+     #'self))
 \end{verbatim}
 \listend
 \end{figure}
@@ -25,12 +25,21 @@
 
 
 \begin{verbatim}
-(alambda (n)
-(if (> n 0)
-(cons
-n
-(self (- n 1)))))
+CL-USER> (alambda (n)
+           (if (> n 0)
+               (cons
+                n
+                (self (- n 1)))))
+#<FUNCTION (LABELS SELF) {B28725D}>
+CL-USER> (funcall 
+          (alambda (n)
+            (if (> n 0)
+                (cons
+                 n
+                 (self (- n 1))))) 3)
+(3 2 1)
 \end{verbatim}
+
 
 \verb"Alambda" делает наш код более интуитивным и простым для чтения, позволяя нам думать об анонимных функциях как о функциях способных вызывать саму себя с той же лёгкостью, как и добавление единственной буквы\footnote{Это другая причина не шарп-закавычивать лямбда формы. Изменение шарп-закавыченных лямбда форм в alambda формы также потребует удаления двух символов.}. Поскольку \verb"alambda" прозрачно специфицирован для \verb"self" привязки - и тот факт что единственная причина использования \verb"alambda" - это применение этой привязки - то нежелательный захват переменной уже не проблема.
 
@@ -45,8 +54,8 @@ n
 \begin{verbatim}
 ;; aif Грэма
 (defmacro aif (test then &optional else)
-`(let ((it ,test))
-(if it ,then ,else)))
+  `(let ((it ,test))
+     (if it ,then ,else)))
 \end{verbatim}
 \listend
 \end{figure}

@@ -1,4 +1,5 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
+  (ql:quickload "cl-ppcre")
   (defun flatten (x)
     (labels ((rec (x acc)
 	       (cond ((null x) acc)
@@ -433,3 +434,13 @@
 			   g!args
 			   `(cdr ,g!args)))))
 	  ds))))
+
+;; alambda Грэма
+(defmacro alambda (parms &body body)
+  `(labels ((self ,parms ,@body))
+     #'self))
+
+;; aif Грэма
+(defmacro aif (test then &optional else)
+  `(let ((it ,test))
+     (if it ,then ,else)))
