@@ -175,10 +175,10 @@ CL-USER> (#3` (((,@a2)) ,a3 (,a1 ,a1))
 \listbegin
 \begin{verbatim}
 (defmacro alet% (letargs &rest body)
-`(let ((this) ,@letargs)
-(setq this ,@(last body))
-,@(butlast body)
-this))
+  `(let ((this) ,@letargs)
+     (setq this ,@(last body))
+     ,@(butlast body)
+     this))
 \end{verbatim}
 \listend
 \end{figure}
@@ -186,52 +186,41 @@ this))
 \verb"Alet%" может быть полезен в случае когда у нас есть инициализирующий код в лямбда форме, который мы не хотим дублировать. Поскольку \verb"this" привязан к возвращаемой лямбда форме, то у нас есть возможность выполнить его перед выходом из окружающего \verb"let". Следующий пример - это замыкание, конструкция которого показывает простой пример использования \verb"alet%" с целью избежания дублирования инициализирующего и сбрасывающего кода:
 
 \begin{verbatim}
-* (alet% ((sum) (mul) (expt))
-(funcall this :reset)
-(dlambda
-(:reset ()
-(psetq sum 0
-mul 1
-expt 2))
-(t (n)
-(psetq sum (+ sum n)
-mul (* mul n)
-expt (expt expt n))
-(list sum mul expt))))
-
-#<Interpreted Function>
+CL-USER> (alet% ((sum) (mul) (expt))
+                (funcall this :reset)
+                (dlambda
+                 (:reset ()
+                         (psetq sum 0
+                                mul 1
+                                expt 2))
+                 (t (n)
+                    (psetq sum (+ sum n)
+                           mul (* mul n)
+                           expt (expt expt n))
+                    (list sum mul expt))))
+#<CLOSURE (LAMBDA (&REST #:ARGS0)) {AB979AD}>
 \end{verbatim}
 
 С помощью этого кода мы можем последовательно изменять значения \verb"sum", \verb"mul" и \verb"expt":
 
 \begin{verbatim}
-* (loop for i from 1 to 5 collect (funcall * 2))
-
-((2 2 4)
-(4 4 16)
-(6 8 256)
-(8 16 65536)
-(10 32 4294967296))
+CL-USER> (loop for i from 1 to 5 collect (funcall * 2))
+((2 2 4) (4 4 16) (6 8 256) (8 16 65536) (10 32 4294967296))
 \end{verbatim}
 
 Мы можем сбросить замыкание вызвав метод \verb":reset". Заметьте, что благодаря \verb"alet%", для сброса в базовые состояния (0 для \verb"sum", 1 для \verb"mul" и 2 для \verb"expt") достаточно использовать \verb":reset" в одном месте:
 
 \begin{verbatim}
-* (funcall ** :reset)
-
+CL-USER> (funcall ** :reset)
 NIL
 \end{verbatim}
 
 Теперь, когда переменные замыкания были сброшены, мы можем увидеть новую последовательность:
 
 \begin{verbatim}
-* (loop for i from 1 to 5 collect (funcall *** 0.5))
-
-((0.5 0.5 1.4142135)
-(1.0 0.25 1.1892071)
-(1.5 0.125 1.0905077)
-(2.0 0.0625 1.0442737)
-(2.5 0.03125 1.0218971))
+CL-USER> (loop for i from 1 to 5 collect (funcall *** 0.5))
+((0.5 0.5 1.4142135) (1.0 0.25 1.1892071) (1.5 0.125 1.0905077)
+ (2.0 0.0625 1.0442737) (2.5 0.03125 1.0218971))
 \end{verbatim}
 
 Учтите, что \verb"alet%" меняет порядок вычисления форм в теле \verb"let". Если вы посмотрите на расширение, вы увидите, что последняя форма тела вычислена первой, её результат привязан лексической привязке \verb"this", а после этого вычисляются предыдущие формы. И пока последний аргумент является константой, изменение порядка вычислений не играет никакой роли. Помните что лямбда выражение\footnote{\verb"Dlambda" расширяется в лямбда формы.} является константой и, таким образом, идеально подходит для использования в \verb"alet%".
@@ -242,11 +231,11 @@ NIL
 \listbegin
 \begin{verbatim}
 (defmacro alet (letargs &rest body)
-`(let ((this) ,@letargs)
-(setq this ,@(last body))
-,@(butlast body)
-(lambda (&rest params)
-(apply this params))))
+  `(let ((this) ,@letargs)
+     (setq this ,@(last body))
+     ,@(butlast body)
+     (lambda (&rest params)
+       (apply this params))))
 \end{verbatim}
 \listend
 \end{figure}
@@ -258,64 +247,57 @@ NIL
 Следующее типичное замыкание-счётчик получает аргумент \verb"n" и может менять направление счётчика между инкрементированием и декрементированием на \verb"n" при передаче символа \verb"invert" в качестве аргумента взамен числа \verb"n":
 
 \begin{verbatim}
-* (alet ((acc 0))
-(alambda (n)
-(if (eq n 'invert)
-(setq this
-(lambda (n)
-(if (eq n 'invert)
-(setq this #'self)
-(decf acc n))))
-(incf acc n))))
-
-#<Interpreted Function>
+CL-USER> (alet ((acc 0))
+               (alambda (n)
+                 (if (eq n 'invert)
+                     (setq this
+                           (lambda (n)
+                             (if (eq n 'invert)
+                                 (setq this #'self)
+                                 (decf acc n))))
+                     (incf acc n))))
+#<CLOSURE (LAMBDA (&REST PARAMS)) {C43A6CD}>
 \end{verbatim}
 
 Сохраним это замыкание для того, чтобы мы могли использовать его так часто, насколько это нам будет нужно:
 
 \begin{verbatim}
-* (setf (symbol-function 'alet-test) *)
-
-#<Interpreted Function>
+CL-USER> (setf (symbol-function 'alet-test) *)
+#<CLOSURE (LAMBDA (&REST PARAMS)) {C43A6CD}>
 \end{verbatim}
 
 При первом запуске счётчик идёт на увеличение:
 
 \begin{verbatim}
-* (alet-test 10)
-
+CL-USER> (alet-test 10)
 10
 \end{verbatim}
 
 Но, мы можем изменять функцию, на вызов внутреннего лямбда выражения в нашем определении через передачу символа \verb"invert" замыканию:
 
 \begin{verbatim}
-* (alet-test 'invert)
-
-#<Interpreted Function>
+CL-USER> (alet-test 'invert)
+#<CLOSURE (LAMBDA (N) :IN SELF) {C7CFA7D}>
 \end{verbatim}
 
 И теперь мы идём вниз:
 
 \begin{verbatim}
-* (alet-test 3)
-
+CL-USER> (alet-test 3)
 7
 \end{verbatim}
 
 И наконец благодаря привязке \verb"self" предоставляемой \verb"alambda" мы можем снова сменить вызываемую функцию передав символ \verb"invert":
 
 \begin{verbatim}
-* (alet-test 'invert)
-
-#<Interpreted Function>
+CL-USER> (alet-test 'invert)
+#<CLOSURE (LABELS SELF) {C43A6B5}>
 \end{verbatim}
 
 Мы вернулись к предыдущему направлению и идём вверх:
 
 \begin{verbatim}
-* (alet-test 5)
-
+CL-USER> (alet-test 5)
 12
 \end{verbatim}
 
@@ -324,25 +306,25 @@ NIL
 Общая техника работы с макросами неформально известна как \emph{выворачивание макроса наизнанку (turning a macro inside out)}. Когда вы выворачиваете макрос наизнанку вы получаете типичную форму, использующую макрос, подобный макросу который вы хотите создать, и расширяете её. Дальше вы используете расширение как шаблон для вашего желаемого макроса. Например, мы хотели бы получить более универсальный метод создания замыканий с множественными состояниями чем способ с вышеприведённым счётчиком, основанном на \verb"alet", окружающем \verb"alambda". Вот расширение изнанки в случае с инвертируемым \verb"alambda" счётчиком:
 
 \begin{verbatim}
-* (macroexpand
-'(alambda (n)
-(if (eq n 'invert)
-(setq this
-(lambda (n)
-(if (eq n 'invert)
-(setq this #'self)
-(decf acc n))))
-(incf acc n))))
-
+CL-USER> (macroexpand
+          '(alambda (n)
+            (if (eq n 'invert)
+                (setq this
+                      (lambda (n)
+                        (if (eq n 'invert)
+                            (setq this #'self)
+                            (decf acc n))))
+                (incf acc n))))
 (LABELS ((SELF (N)
-(IF (EQ N 'INVERT)
-(SETQ THIS
-(LAMBDA (N)
-(IF (EQ N 'INVERT)
-(SETQ THIS #'SELF)
-(DECF ACC N))))
-(INCF ACC N))))
-#'SELF)
+           (IF (EQ N 'INVERT)
+               (SETQ THIS
+                       (LAMBDA (N)
+                         (IF (EQ N 'INVERT)
+                             (SETQ THIS #'SELF)
+                             (DECF ACC N))))
+               (INCF ACC N))))
+  #'SELF)
+T
 \end{verbatim}
 
 Если мы выполним маленький рефакторинг вышеприведённого расширения с учётом того, что \verb"labels" позволяет нам создавать множественные привязки функций\footnote{Используется множественность labels.}, то получится следующее:
@@ -350,25 +332,26 @@ NIL
 
 
 \begin{verbatim}
-(alet ((acc 0))
-(labels ((going-up (n)
-(if (eq n 'invert)
-(setq this #'going-down)
-(incf acc n)))
-(going-down (n)
-(if (eq n 'invert)
-(setq this #'going-up)
-(incf acc (- n)))))
-#'going-up))
+CL-USER> (alet ((acc 0))
+               (labels ((going-up (n)
+                          (if (eq n 'invert)
+                              (setq this #'going-down)
+                              (incf acc n)))
+                        (going-down (n)
+                          (if (eq n 'invert)
+                              (setq this #'going-up)
+                              (incf acc (- n)))))
+                 #'going-up))
+#<CLOSURE (LAMBDA (&REST PARAMS)) {AC359AD}>
 \end{verbatim}
 
 \begin{figure}Листинг 6.6: ALET-FSM\label{listing_6.6}
 \listbegin
 \begin{verbatim}
 (defmacro alet-fsm (&rest states)
-`(macrolet ((state (s)
-`(setq this #',s)))
-(labels (,@states) #',(caar states))))
+  `(macrolet ((state (s)
+                `(setq this #',s)))
+     (labels (,@states) #',(caar states))))
 \end{verbatim}
 \listend
 \end{figure}
@@ -378,16 +361,17 @@ NIL
 \verb"Alet-fsm" даёт нам возможность использовать удобный синтаксис для выражения нескольких возможных \emph{состояний (states)} для нашего замыкания. Это очень тонкий слой сахара из макросов поверх \verb"labels", скомбинированный с \emph{проходом-по-коду} \verb"macrolet" трансформации, позволяющей нам сымитировать функцию \verb"state", изменяющую текущее состояние замыкания через анафору \verb"this" предоставляемую \verb"alet"-ом. В качестве примера приведена более чистая версия счётчика с изменяемым направлением роста:
 
 \begin{verbatim}
-(alet ((acc 0))
-(alet-fsm
-(going-up (n)
-(if (eq n 'invert)
-(state going-down)
-(incf acc n)))
-(going-down (n)
-(if (eq n 'invert)
-(state going-up)
-(decf acc n)))))
+CL-USER> (alet ((acc 0))
+               (alet-fsm
+                (going-up (n)
+                          (if (eq n 'invert)
+                              (state going-down)
+                              (incf acc n)))
+                (going-down (n)
+                            (if (eq n 'invert)
+                                (state going-up)
+                                (decf acc n)))))
+#<CLOSURE (LAMBDA (&REST PARAMS)) {B4BE13D}>
 \end{verbatim}
 
 \verb"Alet-fsm" представляет экземпляр техники, которую мы ещё не видели: \emph{инъекция анафоры (anaphor injection)}. Использование этой анафоры нарушает лексическую прозрачность многими способами, что так или иначе, становится \emph{лексически невидимым (lexically invisible)}. Кроме невидимой привязки \verb"this" \verb"alet"-ом, также невидимым является использование \verb"this" макросом \verb"alet-fsm". \verb"Alet-fsm" инъецирует свободную переменную в наш лексический контекст так, что мы не можем её увидеть.

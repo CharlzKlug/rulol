@@ -455,3 +455,21 @@
 
 (set-dispatch-macro-character
  #\# #\` #'|#`-reader|)
+
+(defmacro alet% (letargs &rest body)
+  `(let ((this) ,@letargs)
+     (setq this ,@(last body))
+     ,@(butlast body)
+     this))
+
+(defmacro alet (letargs &rest body)
+  `(let ((this) ,@letargs)
+     (setq this ,@(last body))
+     ,@(butlast body)
+     (lambda (&rest params)
+       (apply this params))))
+
+(defmacro alet-fsm (&rest states)
+  `(macrolet ((state (s)
+		`(setq this #',s)))
+     (labels (,@states) #',(caar states))))
