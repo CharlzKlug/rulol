@@ -444,3 +444,14 @@
 (defmacro aif (test then &optional else)
   `(let ((it ,test))
      (if it ,then ,else)))
+
+(defun |#`-reader| (stream sub-char numarg)
+  (declare (ignore sub-char))
+  (unless numarg (setq numarg 1))
+  `(lambda ,(loop for i from 1 to numarg
+	       collect (symb 'a i))
+     ,(funcall
+       (get-macro-character #\`) stream nil)))
+
+(set-dispatch-macro-character
+ #\# #\` #'|#`-reader|)

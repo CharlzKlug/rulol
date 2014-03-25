@@ -74,15 +74,15 @@ CL-USER> (funcall
 \listbegin
 \begin{verbatim}
 (defun |#`-reader| (stream sub-char numarg)
-(declare (ignore sub-char))
-(unless numarg (setq numarg 1))
-`(lambda ,(loop for i from 1 to numarg
-collect (symb 'a i))
-,(funcall
-(get-macro-character #\`) stream nil)))
+  (declare (ignore sub-char))
+  (unless numarg (setq numarg 1))
+  `(lambda ,(loop for i from 1 to numarg
+               collect (symb 'a i))
+     ,(funcall
+       (get-macro-character #\`) stream nil)))
 
 (set-dispatch-macro-character
-#\# #\` #'|#`-reader|)
+ #\# #\` #'|#`-reader|)
 \end{verbatim}
 \listend
 \end{figure}
@@ -92,94 +92,78 @@ collect (symb 'a i))
 
 
 \begin{verbatim}
-* '#`((,a1))
-
-(LAMBDA (A1)
-`((,A1)))
+CL-USER> '#`((,a1))
+(LAMBDA (A1) `((,A1)))
 \end{verbatim}
 
 Этот считывающий макрос формирует абстракцию общего шаблона макроса. Например, если у нас есть список переменных и мы хотим создать список \verb"let" привязок, где каждая переменная привязана к символу, скажем, \verb"empty", то мы можем использовать \verb"mapcar" следующим способом:
 
 \begin{verbatim}
-* (mapcar (lambda (a)
-(list a ''empty))
-'(var-a var-b var-c))
-
-((VAR-A 'EMPTY)
-(VAR-B 'EMPTY)
-(VAR-C 'EMPTY))
+CL-USER> (mapcar (lambda (a)
+                   (list a ''empty))
+                 '(var-a var-b var-c))
+((VAR-A 'EMPTY) (VAR-B 'EMPTY) (VAR-C 'EMPTY))
 \end{verbatim}
 
 Но особенно для сложных списковых структур, такой подход может оказаться довольно грязным, поэтому лисп программисты предпочитают использовать обратное закавычивание для поднятия на один уровень закавычивания:
 
 \begin{verbatim}
-* (mapcar (lambda (a)
-`(,a 'empty))
-'(var-a var-b var-c))
-
-((VAR-A 'EMPTY)
-(VAR-B 'EMPTY)
-(VAR-C 'EMPTY))
+CL-USER> (mapcar (lambda (a)
+                   `(,a 'empty))
+                 '(var-a var-b var-c))
+((VAR-A 'EMPTY) (VAR-B 'EMPTY) (VAR-C 'EMPTY))
 \end{verbatim}
 
 Наш новый считывающий макрос вводит анафору и скрывает лямбда форму:
 
 \begin{verbatim}
-* (mapcar #`(,a1 'empty)
-'(var-a var-b var-c))
-
-((VAR-A 'EMPTY)
-(VAR-B 'EMPTY)
-(VAR-C 'EMPTY))
+CL-USER> (mapcar #`(,a1 'empty)
+                 '(var-a var-b var-c))
+((VAR-A 'EMPTY) (VAR-B 'EMPTY) (VAR-C 'EMPTY))
 \end{verbatim}
 
 \verb"1" в символе \verb"a1" выше говорит о том, что пользователи считывающего макроса могут вводить переменное число анафор, зависящее от числа переданного в параметр \verb"numarg" считывающего макроса:
 
 \begin{verbatim}
-* '#2`(,a1 ,a2)
-
-(LAMBDA (A1 A2)
-`(,A1 ,A2))
+CL-USER> '#2`(,a1 ,a2)
+(LAMBDA (A1 A2) `(,A1 ,A2))
 \end{verbatim}
 
 Таким образом мы можем одновременно за\verb"mapcar"-ить шарп-обратно закавыченные выражения с несколькими списками:
 
 \begin{verbatim}
-* (let ((vars '(var-a var-b var-c)))
-(mapcar #2`(,a1 ',a2)
-vars
-(loop for v in vars
-collect (gensym
-(symbol-name v)))))
-
-((VAR-A '#:VAR-A1731)
-(VAR-B '#:VAR-B1732)
-(VAR-C '#:VAR-C1733))
+CL-USER> (let ((vars '(var-a var-b var-c)))
+           (mapcar #2` (,a1 ',a2)
+                   vars
+                   (loop for v in vars
+                        collect (gensym
+                                 (symbol-name v)))))
+((VAR-A '#:VAR-A1213) 
+ (VAR-B '#:VAR-B1214) 
+ (VAR-C '#:VAR-C1215))
 \end{verbatim}
 
 Ещё один способ думать о шарп-обратном закавычивании: шарп - обратное закавычивание выполняет интерполяцию списка, также, как функция \verb"format" выполняет интерполяцию строки. \verb"Format" позволяет нам использовать шаблоны со слотами, заполняемыми значениями отдельных аргументов, аналогично шарп-обратное закавычивание позволяет нам отделить структуру интерполированного списка от значений, с которыми мы хотим их объединить. Благодаря ранее описанному \emph{дуализму синтаксиса} между лямбда формами в позиции функции в списке и лямбда формами, использующими макрос \verb"lambda" для расширения в функцию, мы также можем использовать шарп-обратное закавычивание в роли первого элемента при вызове функции:
 
 \begin{verbatim}
-* (#3`(((,a1)) ,@a2 (,a3))
-(gensym)
-'(a b c)
-'hello)
-
-(((#:G1734)) A B C (HELLO))
+CL-USER> (#3` (((,a1)) ,@a2 (,a3))
+              (gensym)
+              '(a b c)
+              'hello)
+(((#:G1216)) A B C (HELLO))
 \end{verbatim}
 
 В отличие от \verb"format" шарп-обратное закавычивание не использует последовательное позиционирование. Вместо этого используется числа для наших анафорических привязок. Вследствие этого порядок может перемешиваться и мы можем сращивать привязки более одного раза:
 
 \begin{verbatim}
-* (#3`(((,@a2)) ,a3 (,a1 ,a1))
-(gensym)
-'(a b c)
-'hello)
-
-(((A B C)) HELLO (#:G1735 #:G1735))
+CL-USER> (#3` (((,@a2)) ,a3 (,a1 ,a1))
+              (gensym)
+              '(a b c)
+              'hello)
+(((A B C)) HELLO (#:G1217 #:G1217))
 \end{verbatim}
 
-Упражнение: Ссылки на \verb"gensym #:G1735" выглядят так, как будто ссылаются на один и тот-же символ, но, конечно, вы никогда не можете утверждать это глядя на напечатанные имена. Являются ли эти символы \verb"eq"-абельными? Обоснуйте ответ.
+Упражнение: Ссылки на \verb"gensym #:G1217" выглядят так, как будто ссылаются на один и тот-же символ, но, конечно, вы никогда не можете утверждать это глядя на напечатанные имена. Являются ли эти символы \verb"eq"-абельными? Обоснуйте ответ.
 
 \section{Alet и Машины с Конечным Состоянием}\label{section_alet_and_finite_state_machines}
 
