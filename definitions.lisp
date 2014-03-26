@@ -473,3 +473,44 @@
   `(macrolet ((state (s)
 		`(setq this #',s)))
      (labels (,@states) #',(caar states))))
+
+(defmacro! ichain-before (&rest body)
+  `(let ((,g!indir-env this))
+     (setq this
+	   (lambda (&rest ,g!temp-args)
+	     ,@body
+	     (apply ,g!indir-env
+		    ,g!temp-args)))))
+
+(defmacro! ichain-after (&rest body)
+  `(let ((,g!indir-env this))
+     (setq this
+	   (lambda (&rest ,g!temp-args)
+	     (prog1
+		 (apply ,g!indir-env
+			,g!temp-args)
+	       ,@body)))))
+
+(defmacro! ichain-intercept% (&rest body)
+  `(let ((,g!indir-env this))
+     (setq this
+	   (lambda (&rest ,g!temp-args)
+	     (block intercept
+	       (prog1
+		   (apply ,g!indir-env
+			  ,g!temp-args)
+		 ,@body))))))
+
+(defmacro! ichain-intercept (&rest body)
+  `(let ((,g!indir-env this))
+     (setq this
+	   (lambda (&rest ,g!temp-args)
+	     (block ,g!intercept
+	       (macrolet ((intercept (v)
+			    `(return-from
+			      ,',g!intercept
+			       ,v)))
+		 (prog1
+		     (apply ,g!indir-env
+			    ,g!temp-args)
+		   ,@body)))))))

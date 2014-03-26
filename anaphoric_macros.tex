@@ -382,8 +382,6 @@ CL-USER> (alet ((acc 0))
 
 Наиболее правдоподобная гипотеза объясняющая трудность понимания инъекции свободной переменной связана с вопросом \emph{отказобезопасного} поведения\footnote{Здесь под понятием безопасности, в отличие от реального мира, понимается максимально быстрый и громкий отказ.}. С анафорой, в случае когда код переданный пользователем не использует привязку, возможно дальнейшее функционирование кода. Но, есть вероятность, что такой код может отказать без каких-либо предупреждений, а это небезопасно. Однако, когда вы вставите свободную переменную и нет окружения в котором эта переменная может быть захвачена, то всё выражение будет свободным. При возникновении такой ситуации вам нужно решить что делать до того, как вы будете вычислять это выражение. Оно может быть отказобезопасным.
 
-
-
 Отставим в сторону стиль. Иногда инъекция свободной переменной - это то, что нам нужно для того, чтобы создать коммуникацию между двумя связанными макросами. Инъекция выполняет то же, что и анафора, но в другом направлении. Поскольку вы открываете новый канал коммуникации между вашими макросами, то проблемы сложности масштабируются очень быстро. Рассмотрим нахождение в доме полном хрупкого стекла. Вы можете безопасно швырять предметы в людей снаружи дома, даже если они не озаботятся их ловлей, но, вам лучше убедиться что вы сможете поймать любой объект брошенный в вас.
 
 \section{Косвенные Цепи}\label{section_indirection_chains}
@@ -394,12 +392,12 @@ CL-USER> (alet ((acc 0))
 \listbegin
 \begin{verbatim}
 (defmacro! ichain-before (&rest body)
-`(let ((,g!indir-env this))
-(setq this
-(lambda (&rest ,g!temp-args)
-,@body
-(apply ,g!indir-env
-,g!temp-args)))))
+  `(let ((,g!indir-env this))
+     (setq this
+           (lambda (&rest ,g!temp-args)
+             ,@body
+             (apply ,g!indir-env
+                    ,g!temp-args)))))
 \end{verbatim}
 \listend
 \end{figure}
@@ -409,22 +407,21 @@ CL-USER> (alet ((acc 0))
 \verb"Ichain-before" предназначен для расширения в форме \verb"alet". Этот макрос добавляет исполнение нового кода до вызова главного замыкания. Вернёмся к нашему примеру со счётчиком, \verb"ichain-before" позволяет нам добавить новое замыкание, которое печатает предыдущее значение переменной \verb"acc" до того как это значение будет увеличено:
 
 \begin{verbatim}
-* (alet ((acc 0))
-(ichain-before
-(format t "Changing from ~a~%" acc))
-(lambda (n)
-(incf acc n)))
-
-#<Interpreted Function>
+CL-USER> (alet ((acc 0))
+               (ichain-before
+                (format t "Changing from ~a~%" acc))
+               (lambda (n)
+                 (incf acc n)))
+#<CLOSURE (LAMBDA (&REST PARAMS)) {AEC6015}>
 \end{verbatim}
 
 Результат такой, какой и ожидался:
 
 \begin{verbatim}
-* (funcall * 2)
+CL-USER> (funcall * 2)
 Changing from 0
 2
-* (funcall ** 2)
+CL-USER> (funcall ** 2)
 Changing from 2
 4
 \end{verbatim}
@@ -432,23 +429,22 @@ Changing from 2
 Есть причина по которой в названии \verb"ichain-before" содержится упоминание цепи (chain). Мы можем вставить сколько угодно исполняемых замыканий:
 
 \begin{verbatim}
-* (alet ((acc 0))
-(ichain-before
-(format t "A~%"))
-(ichain-before
-(format t "B~%"))
-(ichain-before
-(format t "C~%"))
-(lambda (n)
-(incf acc n)))
-
-#<Interpreted Function>
+CL-USER> (alet ((acc 0))
+          (ichain-before
+           (format t "A~%"))
+          (ichain-before
+           (format t "B~%"))
+          (ichain-before
+           (format t "C~%"))
+          (lambda (n)
+            (incf acc n)))
+#<CLOSURE (LAMBDA (&REST PARAMS)) {B1B330D}>
 \end{verbatim}
 
 Каждое новое звено будет добавляться в начало цепи, в результате появление звеньев цепи будет происходить в обратном порядке:
 
 \begin{verbatim}
-* (funcall * 2)
+CL-USER> (funcall * 2)
 C
 B
 A
@@ -458,22 +454,21 @@ A
 Иногда статическое добавление косвенных цепей оказывается полезным для того, чтобы избежать реструктуризацию макросов просто добавив вместо этого новый окружающий код. Но наиболее интересные возможности косвенных цепей возникают при их динамическом добавлении. Поскольку мы можем создавать новые функции во время исполнения, а также можем получать доступ ко внутренностям замыкания через анафору, то мы можем переписать работу функций во время исполнения. Ниже представлен простой пример в котором каждый вызов замыкания добавляет код, печатающий "Hello world" при запуске:
 
 \begin{verbatim}
-* (alet ((acc 0))
-(lambda (n)
-(ichain-before
-(format t "Hello world~%"))
-(incf acc n)))
-
-#<Interpreted Function>
+CL-USER> (alet ((acc 0))
+               (lambda (n)
+                 (ichain-before
+                  (format t "Hello world~%"))
+                 (incf acc n)))
+#<CLOSURE (LAMBDA (&REST PARAMS)) {C3EFE15}>
 \end{verbatim}
 
 Каждый вызов добавляет новое замыкание к косвенной цепи:
 
 \begin{verbatim}
-* (loop for i from 1 to 4
-do
-(format t "~:r invocation:~%" i)
-(funcall * i))
+CL-USER> (loop for i from 1 to 4
+              do
+              (format t "~:r invocation:~%" i)
+              (funcall * i))
 first invocation:
 second invocation:
 Hello world
@@ -484,6 +479,7 @@ fourth invocation:
 Hello world
 Hello world
 Hello world
+NIL
 \end{verbatim}
 
 Макрос \verb"ichain-after" подобен макросу \verb"ichain-before" за исключением того, что он добавляет замыкания в другой конец исполняемой цепи: после вызова главного замыкания. \verb"Ichain-after" использует \verb"prog1", который последовательно исполняет переданные формы и затем возвращает результат вычисления первой формы.
@@ -491,16 +487,15 @@ Hello world
 \verb"Ichain-before" и \verb"ichain-after" могут комбинироваться, пример:
 
 \begin{verbatim}
-* (alet ((acc 0))
-(ichain-before
-(format t "Changing from ~a~%" acc))
-(ichain-after
-(format t "Changed to ~a~%" acc))
-(lambda (n)
-(incf acc n)))
-
-#<Interpreted Function>
-* (funcall * 7)
+CL-USER> (alet ((acc 0))
+               (ichain-before
+                (format t "Changing from ~a~%" acc))
+               (ichain-after
+                (format t "Changed to ~a~%" acc))
+               (lambda (n)
+                 (incf acc n)))
+#<CLOSURE (LAMBDA (&REST PARAMS)) {D26585D}>
+CL-USER> (funcall * 7)
 Changing from 0
 Changed to 7
 7
@@ -510,13 +505,13 @@ Changed to 7
 \listbegin
 \begin{verbatim}
 (defmacro! ichain-after (&rest body)
-`(let ((,g!indir-env this))
-(setq this
-(lambda (&rest ,g!temp-args)
-(prog1
-(apply ,g!indir-env
-,g!temp-args)
-,@body)))))
+  `(let ((,g!indir-env this))
+     (setq this
+           (lambda (&rest ,g!temp-args)
+             (prog1
+                 (apply ,g!indir-env
+                        ,g!temp-args)
+               ,@body)))))
 \end{verbatim}
 \listend
 \end{figure}
@@ -527,14 +522,14 @@ Changed to 7
 \listbegin
 \begin{verbatim}
 (defmacro! ichain-intercept% (&rest body)
-`(let ((,g!indir-env this))
-(setq this
-(lambda (&rest ,g!temp-args)
-(block intercept
-(prog1
-(apply ,g!indir-env
-,g!temp-args)
-,@body))))))
+  `(let ((,g!indir-env this))
+     (setq this
+           (lambda (&rest ,g!temp-args)
+             (block intercept
+               (prog1
+                   (apply ,g!indir-env
+                          ,g!temp-args)
+                 ,@body))))))
 \end{verbatim}
 \listend
 \end{figure}
@@ -546,22 +541,21 @@ Changed to 7
 Так мы можем добавить перехват в наше обычное замыкание - счётчик:
 
 \begin{verbatim}
-* (alet ((acc 0))
-(ichain-intercept%
-(when (< acc 0)
-(format t "Acc went negative~%")
-(setq acc 0)
-(return-from intercept acc)))
-(lambda (n)
-(incf acc n)))
-
-#<Interpreted Function>
+CL-USER> (alet ((acc 0))
+               (ichain-intercept%
+                (when (< acc 0)
+                  (format t "Acc went negative~%")
+                  (setq acc 0)
+                  (return-from intercept acc)))
+               (lambda (n)
+                 (incf acc n)))
+#<CLOSURE (LAMBDA (&REST PARAMS)) {B0903CD}>
 \end{verbatim}
 
 Код, установленный при помощи \verb"ichain-intercept%", предупредит нас о падении значения счётчика ниже 0:
 
 \begin{verbatim}
-* (funcall * -8)
+CL-USER> (funcall * -8)
 Acc went negative
 0
 \end{verbatim}
@@ -570,18 +564,18 @@ Acc went negative
 \listbegin
 \begin{verbatim}
 (defmacro! ichain-intercept (&rest body)
-`(let ((,g!indir-env this))
-(setq this
-(lambda (&rest ,g!temp-args)
-(block ,g!intercept
-(macrolet ((intercept (v)
-`(return-from
-,',g!intercept
-,v)))
-(prog1
-(apply ,g!indir-env
-,g!temp-args)
-,@body)))))))
+  `(let ((,g!indir-env this))
+     (setq this
+           (lambda (&rest ,g!temp-args)
+             (block ,g!intercept
+               (macrolet ((intercept (v)
+                            `(return-from
+                              ,',g!intercept
+                               ,v)))
+                 (prog1
+                     (apply ,g!indir-env
+                            ,g!temp-args)
+                   ,@body)))))))
 \end{verbatim}
 \listend
 \end{figure}
@@ -589,8 +583,7 @@ Acc went negative
 Счётчик будет сброшен в 0:
 
 \begin{verbatim}
-* (funcall ** 3)
-
+CL-USER> (funcall ** 3)
 3
 \end{verbatim}
 
@@ -599,26 +592,24 @@ Acc went negative
 Вместо захвата блокирующей анафоры \verb"intercept", \verb"ichain-intercept" создаёт локальный макрос, позволяющий коду внутри \verb"ichain-intercept" использовать \verb"intercept" для расширения в \verb"return-from" где блок определён как \verb"gensym".
 
 \begin{verbatim}
-* (alet ((acc 0))
-(ichain-intercept
-(when (< acc 0)
-(format t "Acc went negative~%")
-(setq acc 0)
-(intercept acc)))
-(lambda (n)
-(incf acc n)))
-
-#<Interpreted Function>
+CL-USER> (alet ((acc 0))
+               (ichain-intercept
+                (when (< acc 0)
+                  (format t "Acc went negative~%")
+                  (setq acc 0)
+                  (intercept acc)))
+               (lambda (n)
+                 (incf acc n)))
+#<CLOSURE (LAMBDA (&REST PARAMS)) {CC4F815}>
 \end{verbatim}
 
 Результат тот же, что и в \verb"ichain-intercept%":
 
 \begin{verbatim}
-* (funcall * -8)
+CL-USER> (funcall * -8)
 Acc went negative
 0
-* (funcall ** 3)
-
+CL-USER> (funcall ** 3)
 3
 \end{verbatim}
 
