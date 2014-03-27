@@ -514,3 +514,32 @@
 		     (apply ,g!indir-env
 			    ,g!temp-args)
 		   ,@body)))))))
+
+(defmacro alet-hotpatch% (letargs &rest body)
+  `(let ((this) ,@letargs)
+     (setq this ,@(last body))
+     ,@(butlast body)
+     (lambda (&rest args)
+       (if (eq (car args) ':hotpatch)
+	   (setq this (cadr args))
+	   (apply this args)))))
+
+(defmacro alet-hotpatch (letargs &rest body)
+  `(let ((this) ,@letargs)
+     (setq this ,@(last body))
+     ,@(butlast body)
+     (dlambda
+      (:hotpatch (closure)
+		 (setq this closure))
+      (t (&rest args)
+	 (apply this args)))))
+
+(defmacro! let-hotpatch (letargs &rest body)
+  `(let ((,g!this) ,@letargs)
+     (setq ,g!this ,@(last body))
+     ,@(butlast body)
+     (dlambda
+      (:hotpatch (closure)
+		 (setq ,g!this closure))
+      (t (&rest args)
+	 (apply ,g!this args)))))

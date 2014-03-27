@@ -628,13 +628,13 @@ CL-USER> (funcall ** 3)
 \listbegin
 \begin{verbatim}
 (defmacro alet-hotpatch% (letargs &rest body)
-`(let ((this) ,@letargs)
-(setq this ,@(last body))
-,@(butlast body)
-(lambda (&rest args)
-(if (eq (car args) ':hotpatch)
-(setq this (cadr args))
-(apply this args)))))
+  `(let ((this) ,@letargs)
+     (setq this ,@(last body))
+     ,@(butlast body)
+     (lambda (&rest args)
+       (if (eq (car args) ':hotpatch)
+           (setq this (cadr args))
+           (apply this args)))))
 \end{verbatim}
 \listend
 \end{figure}
@@ -642,49 +642,45 @@ CL-USER> (funcall ** 3)
 Возможность замены замыкания использованного в другом выполняющемся замыкании во время работы программы называется \emph{горячей заменой (hotpatching)}. Например, мы создали замыкание с поддержкой горячей замены и, для дальнейшего применения, сохранили его в ячейку символа-функции символа \verb"hotpatch-test":
 
 \begin{verbatim}
-* (setf (symbol-function 'hotpatch-test)
-(alet-hotpatch% ((acc 0))
-(lambda (n)
-(incf acc n))))
-
-#<Interpreted Function>
+CL-USER> (setf (symbol-function 'hotpatch-test)
+               (alet-hotpatch% ((acc 0))
+                               (lambda (n)
+                                 (incf acc n))))
+#<CLOSURE (LAMBDA (&REST ARGS)) {AE37ED5}>
 \end{verbatim}
 
 Возможное применение:
 
 \begin{verbatim}
-* (hotpatch-test 3)
-
+CL-USER> (hotpatch-test 3)
 3
-* (hotpatch-test 4)
-
+CL-USER> (hotpatch-test 4)
 7
 \end{verbatim}
 
 Мы можем заменить лямбда форму - вместе со связанной с ней средой - вызвав это замыкание с символом \verb":hotpatch" и заменяющей функцией или замыканием:
 
 \begin{verbatim}
-* (hotpatch-test
-:hotpatch
-(let ((acc 0))
-(lambda (n)
-(incf acc (* 2 n)))))
-
-#<Interpreted Function>
+CL-USER> (hotpatch-test
+          :hotpatch
+          (let ((acc 0))
+            (lambda (n)
+              (incf acc (* 2 n)))))
+#<CLOSURE (LAMBDA (N)) {B0FF48D}>
 \end{verbatim}
 
 \begin{figure}Листинг 6.12: ALET-HOTPATCH\label{listing_6.12}
 \listbegin
 \begin{verbatim}
 (defmacro alet-hotpatch (letargs &rest body)
-`(let ((this) ,@letargs)
-(setq this ,@(last body))
-,@(butlast body)
-(dlambda
-(:hotpatch (closure)
-(setq this closure))
-(t (&rest args)
-(apply this args)))))
+  `(let ((this) ,@letargs)
+     (setq this ,@(last body))
+     ,@(butlast body)
+     (dlambda
+      (:hotpatch (closure)
+                 (setq this closure))
+      (t (&rest args)
+         (apply this args)))))
 \end{verbatim}
 \listend
 \end{figure}
@@ -692,11 +688,9 @@ CL-USER> (funcall ** 3)
 Теперь замыкание обладает новым, исправленным на лету поведением:
 
 \begin{verbatim}
-* (hotpatch-test 2)
-
+CL-USER> (hotpatch-test 2)
 4
-* (hotpatch-test 5)
-
+CL-USER> (hotpatch-test 5)
 14
 \end{verbatim}
 
@@ -708,14 +702,14 @@ CL-USER> (funcall ** 3)
 \listbegin
 \begin{verbatim}
 (defmacro! let-hotpatch (letargs &rest body)
-`(let ((,g!this) ,@letargs)
-(setq ,g!this ,@(last body))
-,@(butlast body)
-(dlambda
-(:hotpatch (closure)
-(setq ,g!this closure))
-(t (&rest args)
-(apply ,g!this args)))))
+  `(let ((,g!this) ,@letargs)
+     (setq ,g!this ,@(last body))
+     ,@(butlast body)
+     (dlambda
+      (:hotpatch (closure)
+                 (setq ,g!this closure))
+      (t (&rest args)
+         (apply ,g!this args)))))
 \end{verbatim}
 \listend
 \end{figure}
