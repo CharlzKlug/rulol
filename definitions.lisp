@@ -113,7 +113,18 @@
 	    (if (funcall test tree)
 		(funcall result tree)
 		tree))))
-  (defvar cxr-inline-thresh 10))
+  (defvar cxr-inline-thresh 10)
+
+  (defun let-binding-transform (bs)
+    (if bs
+	(cons
+	 (cond ((symbolp (car bs))
+		(list (car bs)))
+	       ((consp (car bs))
+		(car bs))
+	       (t
+		(error "Bad let bindings")))
+	 (let-binding-transform (cdr bs))))))
 
 (defmacro defmacro! (name args &rest body)
   (let* ((os (remove-if-not #'o!-symbol-p args))
@@ -543,3 +554,23 @@
 		 (setq ,g!this closure))
       (t (&rest args)
 	 (apply ,g!this args)))))
+
+(defmacro sublet (bindings% &rest body)
+  (let ((bindings (let-binding-transform
+		   bindings%)))
+    (setq bindings
+	  (mapcar
+	   (lambda (x)
+	     (cons (gensym (symbol-name (car x))) x))
+	   bindings))
+    `(let (,@(mapcar #'list
+                     (mapcar #'car bindings)
+                     (mapcar #'caddr bindings)))
+       ,@(tree-leaves
+	  body
+	  #1=(member x bindings :key #'cadr)
+	  (caar #1#)))))
+
+(defmacro sublet* (bindings &rest body)
+  `(sublet ,bindings
+	   ,@(mapcar #'macroexpand-1 body)))

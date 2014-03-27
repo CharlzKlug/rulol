@@ -734,99 +734,89 @@ CL-USER> (hotpatch-test 5)
 Поскольку \verb"defmacro!" производит предварительную обработку полученного кода и создаёт списки всех G-bang символов до расширения кода, то отсюда следует что G-bang символы суб-лексически привязаны. Мы не можем написать макросы, инъецирующие G-bang символы в \verb"defmacro!" поскольку лексические привязки для G-bang символов никогда не создавались. Вот типичное применение суб-лексического G-bang символа:
 
 \begin{verbatim}
-* (defmacro! junk ()
-`(let ((,g!var))
-,g!var))
-
+CL-USER> (defmacro! junk ()
+           `(let ((,g!var))
+              ,g!var))
 JUNK
 \end{verbatim}
 
 Оба G-bang символа были созданы в суб-лексической области видимости \verb"defmacro!" таким образом, расширение будет таким, каким мы его ожидали увидеть:
 
 \begin{verbatim}
-* (macroexpand '(junk))
-
+CL-USER> (macroexpand '(junk))
 (LET ()
-(LET ((#:VAR1663))
-#:VAR1663))
+  (LET ((#:VAR1196))
+    #:VAR1196))
 T
 \end{verbatim}
 
 Однако, для того, чтобы изучить концепцию суб-лексической области видимости мы определим макрос, инъецирующий G-bang символ:
 
 \begin{verbatim}
-* (defmacro injector-for-g!var ()
-''g!var)
-
+CL-USER> (defmacro injector-for-g!var ()
+           ''g!var)
 INJECTOR-FOR-G!VAR
 \end{verbatim}
 
 Теперь мы можем написать \verb"junk2". \verb"Junk2" идентичен \verb"junk" с тем исключением, что мы заменили наши G-bang символы макросом, который расширяется в G-bang символ:
 
 \begin{verbatim}
-* (defmacro! junk2 ()
-`(let ((,(injector-for-g!var)))
-,(injector-for-g!var)))
-
+CL-USER> (defmacro! junk2 ()
+           `(let ((,(injector-for-g!var)))
+              ,(injector-for-g!var)))
 JUNK2
 \end{verbatim}
 
 Но поскольку G-band символы привязаны суб-лексически - и поэтому не ищутся в макро расширениях форм - то \verb"defmacro!" не конвертирует символы в автоматические \verb"gensym"-ы:
 
 \begin{verbatim}
-* (macroexpand '(junk2))
-
+CL-USER> (macroexpand '(junk2))
 (LET ()
-(LET ((G!VAR))
-G!VAR))
+  (LET ((G!VAR))
+    G!VAR))
 T
 \end{verbatim}
 
 И хотя вышеприведённый код по-прежнему функционален, указатели на переменные, находящиеся в суб-лексической области видимости могут вывести из строя выражения, в которых некоторые указатели ссылаются на переменные существующие в суб-лексической области видимости а другие - нет:
 
 \begin{verbatim}
-* (defmacro! junk3 ()
-`(let ((,g!var))
-,(injector-for-g!var)))
-
+CL-USER> (defmacro! junk3 ()
+           `(let ((,g!var))
+              ,(injector-for-g!var)))
 JUNK3
-* (macroexpand '(junk3))
-
+CL-USER> (macroexpand '(junk3))
 (LET ()
-(LET ((#:VAR1672))
-G!VAR))
+  (LET ((#:VAR1209))
+    G!VAR))
 T
 \end{verbatim}
 
 Суб-лексическая область видимости удивительно часто появляется в сложных макросах. Кроме \verb"defmacro!" можно привести по крайней мере один пример: макрос \verb"with-all-cxrs" из \emph{раздела Рекурсивные Решения} суб-лексически привязывает функции получения элементов списка. В результате работы суб-лексических привязок оказывается что к подобным привязкам невозможно сослаться из макро расширения. Иногда подобное ограничение полезно, иногда нет. В случае с \verb"with-all-cxrs" суб-лексичность может рассматриваться как нежелательный эффект. Когда наш метдод получения доступа к элементу списка находится в суб-лексической области видимости \verb"with-all-cxrs" то проблем не возникает:
 
 \begin{verbatim}
-* (with-all-cxrs
-(cadadadr nil))
-
+CL-USER> (with-all-cxrs
+             (cadadadr nil))
 NIL
 \end{verbatim}
 
 Кроме этого мы можем даже написать макросы, расширяющиеся в эти методы получения доступа, поскольку макро определения находятся в суб-лексической области видимости \verb"with-all-cxrs":
 
 \begin{verbatim}
-* (with-all-cxrs
-(macrolet ((accessor (l)
-`(cadadadr ,l)))
-(accessor nil)))
-
+CL-USER> (with-all-cxrs
+             (macrolet ((accessor (l)
+                          `(cadadadr ,l)))
+               (accessor nil)))
 NIL
 \end{verbatim}
 
 Но, помните, что что \verb"with-all-cxrs" привязывает функции получения доступа суб-лексически, поэтому мы не можем инъецировать макрос, в функцию получения доступа:
 
 \begin{verbatim}
-* (macrolet ((accessor (l)
-`(cadadadr ,l)))
-(with-all-cxrs
-(accessor nil)))
-
-This function is undefined: CADADADR
+CL-USER> (macrolet ((accessor (l)
+                      `(cadadadr ,l)))
+           (with-all-cxrs
+               (accessor nil)))
+The function COMMON-LISP-USER::CADADADR is undefined.
 \end{verbatim}
 
 Теперь, когда мы знакомы с понятием \emph{анафор} и увидели большое количество примеров сложных макросов - включая и те, которые используют суб-лексическую область видимости - мы можем обсудить интересный теоретический макрос: \verb"sublet". Этот макрос создаёт суб-лексические привязки кода, используя синтаксис, подобный синтаксису обычной \verb"let" формы. Обсуждение \verb"sublet" мы начнём также, как и обсуждения многих лисп макросов - с утилиты.
@@ -835,15 +825,15 @@ This function is undefined: CADADADR
 \listbegin
 \begin{verbatim}
 (defun let-binding-transform (bs)
-(if bs
-(cons
-(cond ((symbolp (car bs))
-(list (car bs)))
-((consp (car bs))
-(car bs))
-(t
-(error "Bad let bindings")))
-(let-binding-transform (cdr bs)))))
+  (if bs
+      (cons
+       (cond ((symbolp (car bs))
+              (list (car bs)))
+             ((consp (car bs))
+              (car bs))
+             (t
+              (error "Bad let bindings")))
+       (let-binding-transform (cdr bs)))))
 \end{verbatim}
 \listend
 \end{figure}
@@ -851,9 +841,8 @@ This function is undefined: CADADADR
 \verb"Let-binding-transform" - это простая утилита, обрабатывающая случай когда \verb"let" форма привязывает единственный символ. В следующем примере \verb"a" нормализуется до \verb"(a)":
 
 \begin{verbatim}
-* (let-binding-transform
-'(a (b) (c nil)))
-
+CL-USER> (let-binding-transform
+          '(a (b) (c nil)))
 ((A) (B) (C NIL))
 \end{verbatim}
 
@@ -865,20 +854,20 @@ This function is undefined: CADADADR
 \listbegin
 \begin{verbatim}
 (defmacro sublet (bindings% &rest body)
-(let ((bindings (let-binding-transform
-bindings%)))
-(setq bindings
-(mapcar
-(lambda (x)
-(cons (gensym (symbol-name (car x))) x))
-bindings))
-`(let (,@(mapcar #'list
-(mapcar #'car bindings)
-(mapcar #'caddr bindings)))
-,@(tree-leaves
-body
-#1=(member x bindings :key #'cadr)
-(caar #1#)))))
+  (let ((bindings (let-binding-transform
+                   bindings%)))
+    (setq bindings
+          (mapcar
+           (lambda (x)
+             (cons (gensym (symbol-name (car x))) x))
+           bindings))
+    `(let (,@(mapcar #'list
+                     (mapcar #'car bindings)
+                     (mapcar #'caddr bindings)))
+       ,@(tree-leaves
+          body
+          #1=(member x bindings :key #'cadr)
+          (caar #1#)))))
 \end{verbatim}
 \listend
 \end{figure}
@@ -888,24 +877,22 @@ body
 
 
 \begin{verbatim}
-* (macroexpand
-'(sublet ((a 0))
-(list a)))
-
-(LET ((#:A1657 0))
-(LIST #:A1657))
+CL-USER> (macroexpand
+          '(sublet ((a 0))
+            (list a)))
+(LET ((#:A1214 0))
+  (LIST #:A1214))
 T
 \end{verbatim}
 
 Однако, поскольку суб-лексическая область видимости не предполагает расширения макросов, и само собой разумеется отсутствие интерпретации таких специальных форм как \verb"quote", то экземпляры символа \verb"a" не являющиеся ссылками на переменную также будут меняться:
 
 \begin{verbatim}
-* (macroexpand
-'(sublet ((a 0))
-(list 'a)))
-
-(LET ((#:A1658 0))
-(LIST '#:A1658))
+CL-USER> (macroexpand
+          '(sublet ((a 0))
+            (list 'a)))
+(LET ((#:A1215 0))
+  (LIST '#:A1215))
 T
 \end{verbatim}
 
@@ -917,62 +904,59 @@ T
 
 Весьма очевидно, что супер суб-лексическая область видимости использует \verb"sublet*". Этот макрос основан на \verb"sublet" но изменяет каждую форму в теле осуществляя макрорасширение этих форм с помощью функции \verb"macroexpand-1". Теперь вместо появления в сырой списковой структуре ссылки на символы должны появляться после первого шага макро расширения. Этот тип супер суб-лексической области видимости позволяет макросам инъецировать или удалять ссылки из области видимости внутри тела \verb"let" формы. Если макросы не выполняют эти операции - или если формы вовсе не являются макросами - то этот тип супер суб-лексической области видимости работает также, как и суб-лексическая область видимости:
 
+\begin{verbatim}
+CL-USER> (macroexpand
+          '(sublet* ((a 0))
+            (list a)))
+(LET ((#:A1216 0))
+  (LIST #:A1216))
+T
+\end{verbatim}
+
 \begin{figure}Листинг 6.16: SUBLET*\label{listing_6.16}
 \listbegin
 \begin{verbatim}
 (defmacro sublet* (bindings &rest body)
-`(sublet ,bindings
-,@(mapcar #'macroexpand-1 body)))
-
-* (macroexpand
-'(sublet* ((a 0))
-(list a)))
-
-(LET ((#:A1659 0))
-(LIST #:A1659))
-T
+  `(sublet ,bindings
+           ,@(mapcar #'macroexpand-1 body)))
 \end{verbatim}
 \listend
 \end{figure}
 
 Но мы можем определить другой макрос - инъектор для проверки этой супер суб-лексической области видимости:
 
-\begin{verbatim}* (defmacro injector-for-a ()
-'a)
-
+\begin{verbatim}
+CL-USER> (defmacro injector-for-a ()
+           'a)
 INJECTOR-FOR-A
 \end{verbatim}
 
 \verb"Sublet*" раскроет этот макрос - инъектор:
 
 \begin{verbatim}
-* (macroexpand-1
-'(sublet* ((a 0))
-(injector-for-a)))
-
-(SUBLET ((A 0))
-A)
+CL-USER> (macroexpand-1
+          '(sublet* ((a 0))
+            (injector-for-a)))
+(SUBLET ((A 0)) A)
 T
 \end{verbatim}
 
 Что в свою очередь будет суб-лексически интерпретироваться \verb"sublet"-ом, обозначая присутствие инъецированной переменной внутри супер суб-лексической области видимости предоставляемой \verb"sublet*"-ом:
 
 \begin{verbatim}
-* (macroexpand-1 *)
-
-(LET ((#:A1663 0))
-#:A1663)
+CL-USER> (macroexpand-1 *)
+(LET ((#:A1221 0))
+  #:A1221)
+T
 \end{verbatim}
 
 Но вложенные макросы в выражении не раскрываются через \textbf{mac\-ro\-ex\-pand-1} поэтому \verb"sublet*" не вставляет их в суб-лексическую область видимости \verb"sublet":
 
 \begin{verbatim}
-* (macroexpand-1
-'(sublet* ((a 0))
-(list (injector-for-a))))
-
-(SUBLET ((A 0))
-(LIST (INJECTOR-FOR-A)))
+CL-USER> (macroexpand-1
+          '(sublet* ((a 0))
+            (list (injector-for-a))))
+(SUBLET ((A 0)) (LIST (INJECTOR-FOR-A)))
 T
 \end{verbatim}
 
@@ -982,9 +966,8 @@ T
 
 \begin{verbatim}
 * (walker:macroexpand-all *)
-
 (LET ((#:A1666 0))
-(LIST A))
+     (LIST A))
 \end{verbatim}
 
 С помощью \verb"sublet" и \verb"sublet*" мы можем, используя суб-лексические или супер суб-лексические области видимости, произвольно контролировать на каком уровне макро расширения переменная \verb"a" будет рассматриваться как корректная. Как замечено выше супер суб-лексическая область видимости это почти полностью не исследованный бесконечный класс областей видимости. Способов прохода по коду - большое множество, существует такое же количество множеств супер суб-лексических областей видимости. Этот класс областей видимости подводит нас к другой категории почти неисследованных макросов: макросы, изменяющие работу лисп макросов. Эти макросы способны определять когда следует раскрывать макрос, где ссылки на переменные являются корректными, как интерпретировать специальные формы и т.д. То есть, мы получаем макро-программируемый раскрыватель макросов.
