@@ -211,7 +211,24 @@
 			(return-from
 			 safe-read-from-string fail))))
 	    (read-from-string s)))
-	fail)))
+	fail))
+
+  (defun pandoriclet-get (letargs)
+    `(case sym
+       ,@(mapcar #`((,(car a1)) ,(car a1))
+		 letargs)
+       (t (error
+	   "Unknown pandoric get: ~a"
+	   sym))))
+
+  (defun pandoriclet-set (letargs)
+    `(case sym
+       ,@(mapcar #`((,(car a1))
+		    (setq ,(car a1) val))
+		 letargs)
+       (t (error
+	   "Unknown pandoric set: ~a"
+	   sym val)))))
 
 (defmacro unit-of-time (value unit)
   `(* ,value
@@ -574,3 +591,111 @@
 (defmacro sublet* (bindings &rest body)
   `(sublet ,bindings
 	   ,@(mapcar #'macroexpand-1 body)))
+
+(defmacro pandoriclet (letargs &rest body)
+  (let ((letargs (cons
+		  '(this)
+		  (let-binding-transform
+		   letargs))))
+    `(let (,@letargs)
+       (setq this ,@(last body))
+       ,@(butlast body)
+       (dlambda
+	(:pandoric-get (sym)
+		       ,(pandoriclet-get letargs))
+	(:pandoric-set (sym val)
+		       ,(pandoriclet-set letargs))
+	(t (&rest args)
+	   (apply this args))))))
+
+(declaim (inline get-pandoric))
+
+(defun get-pandoric (box sym)
+  (funcall box :pandoric-get sym))
+
+(defsetf get-pandoric (box sym) (val)
+  `(progn
+     (funcall ,box :pandoric-set ,sym ,val)
+     ,val))
+
+(defmacro! with-pandoric (syms o!box &rest body)
+  `(symbol-macrolet
+       (,@(mapcar #`(,a1 (get-pandoric ,g!box ',a1))
+		  syms))
+     ,@body))
+
+(defun pandoric-hotpatch (box new)
+  (with-pandoric (this) box
+		 (setq this new)))
+
+(defmacro pandoric-recode (vars box new)
+  `(with-pandoric (this ,@vars) ,box
+		  (setq this ,new)))
+
+(defmacro plambda (largs pargs &rest body)
+  (let ((pargs (mapcar #'list pargs)))
+    `(let (this self)
+       (setq
+	this (lambda ,largs ,@body)
+	self (dlambda
+	      (:pandoric-get (sym)
+			     ,(pandoriclet-get pargs))
+	      (:pandoric-set (sym val)
+			     ,(pandoriclet-set pargs))
+	      (t (&rest args)
+		 (apply this args)))))))
+
+(defun make-stats-counter
+    (&key (count 0)
+     (sum 0)
+     (sum-of-squares 0))
+  (plambda (n) (sum count sum-of-squares)
+	   (incf sum-of-squares (expt n 2))
+	   (incf sum n)
+	   (incf count)))
+
+(defmacro defpan (name args &rest body)
+  `(defun ,name (self)
+     ,(if args
+	  `(with-pandoric ,args self
+			  ,@body)
+	  `(progn ,@body))))
+
+(defpan stats-counter-mean (sum count)
+  (/ sum count))
+
+(defpan stats-counter-variance
+    (sum-of-squares sum count)
+  (if (< count 2)
+      0
+      (/ (- sum-of-squares
+	    (* sum
+	       (stats-counter-mean self)))
+	 (- count 1))))
+
+(defpan stats-counter-stddev ()
+  (sqrt (stats-counter-variance self)))
+
+(defun make-noisy-stats-counter
+    (&key (count 0)
+     (sum 0)
+     (sum-of-squares 0))
+  (plambda (n) (sum count sum-of-squares)
+	   (incf sum-of-squares (expt n 2))
+	   (incf sum n)
+	   (incf count)
+	   
+	   (format t
+		   "~&MEAN=~a~%VAR=~a~%STDDEV=~a~%"
+		   (stats-counter-mean self)
+		   (stats-counter-variance self)
+		   (stats-counter-stddev self))))
+
+(defvar pandoric-eval-tunnel)
+
+(defmacro pandoric-eval (vars expr)
+  `(let ((pandoric-eval-tunnel
+	  (plambda () ,vars t)))
+     (eval `(with-pandoric
+		,',vars pandoric-eval-tunnel
+		,,expr))))
