@@ -36,3 +36,36 @@
   `(def-forth-naked-prim
        ,@code
        (setf pc (cdr pc))))
+
+(def-forth-prim nop nil)
+
+(def-forth-prim * nil
+  (push (* (pop pstack) (pop pstack))
+        pstack))
+
+(def-forth-prim drop nil
+  (pop pstack))
+
+(def-forth-prim dup nil
+  (push (car pstack) pstack))
+
+(def-forth-prim swap nil
+  (rotatef (car pstack) (cadr pstack)))
+
+(def-forth-prim print nil
+  (print (pop pstack)))
+
+(def-forth-prim >r nil
+  (push (pop pstack) rstack))
+
+(def-forth-prim r> nil
+  (push (pop rstack) pstack))
+
+(defmacro new-forth ()
+  `(let ,forth-registers
+     (forth-install-prims)
+     (lambda (v)
+       (let ((word (forth-lookup v dict)))
+	 (if word
+	     (forth-handle-found)
+	     (forth-handle-not-found))))))
