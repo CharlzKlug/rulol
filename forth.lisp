@@ -133,7 +133,7 @@
   `(alet ,forth-registers
          (setq dtable (make-hash-table))
          (forth-install-prims)
-         (dolist (v forth-bstdlib)
+         (dolist (v forth-stdlib)
            (funcall this v))
          (plambda (v) ,forth-registers
                   (let ((word (forth-lookup v dict)))
