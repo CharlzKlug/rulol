@@ -1,4 +1,4 @@
-(defvar forth-regbisters
+(defvar forth-registers
   '(pstack rstack pc
     dict compiling dtable))
 
@@ -133,7 +133,7 @@
   `(alet ,forth-registers
          (setq dtable (make-hash-table))
          (forth-install-prims)
-         (dolist (v forth-stdlib)
+         (dolist (v forth-bstdlib)
            (funcall this v))
          (plambda (v) ,forth-registers
                   (let ((word (forth-lookup v dict)))
