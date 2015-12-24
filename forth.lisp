@@ -11,8 +11,8 @@
              (cond ((null x) acc)
                    ((atom x) (cons x acc))
                    (t (rec
-                        (car x)
-                        (rec (cdr x) acc))))))
+                       (car x)
+                       (rec (cdr x) acc))))))
     (rec x nil)))
 
 (defvar forth-registers
@@ -140,7 +140,26 @@
   (symb "G!"
         (subseq (symbol-name s) 2)))
 
+(defmacro defmacro/g! (name args &rest body)
+  (let ((syms (remove-duplicates
+               (remove-if-not #'g!-symbol-p
+                              (flatten body)))))
+    `(defmacro ,name ,args
+       (let ,(mapcar
+              (lambda (s)
+                `(,s (gensym ,(subseq
+                               (symbol-name s)
+                               2))))
+              syms)
+         ,@body))))
 
+
+(defmacro defmacro! (name args &rest body)
+  (let* ((os (remove-if-not #'o!-symbol-p args))
+         (gs (mapcar #'o!-symbol-to-g!-symbol os)))
+    `(defmacro/g! ,name ,args
+       `(let ,(mapcar #'list (list ,@gs) (list ,@os))
+          ,(progn ,@body)))))
 
 
 (defmacro! dlambda (&rest ds)
@@ -174,17 +193,17 @@
 (defmacro forth-install-prims ()
   `(progn
      ,@(mapcar
-         #`(let ((thread (lambda ()
-                           ,@(cddr a1))))
-             (setf dict
-                   (make-forth-word
-                      :name ',(car a1)
-                      :prev dict
-                      :immediate ,(cadr a1)
-                      :thread thread))
-             (setf (gethash thread dtable)
-                   ',(cddr a1)))
-         forth-prim-forms)))
+        #`(let ((thread (lambda ()
+                          ,@(cddr a1))))
+            (setf dict
+                  (make-forth-word
+                   :name ',(car a1)
+                   :prev dict
+                   :immediate ,(cadr a1)
+                   :thread thread))
+            (setf (gethash thread dtable)
+                  ',(cddr a1)))
+        forth-prim-forms)))
 
 (defvar forth-stdlib nil)
 
@@ -204,41 +223,73 @@
                   (let ((word (forth-lookup v dict)))
                     (if word
                         (forth-handle-found)
-                      (forth-handle-not-found))))))
-
-
-
-
-
-
-
-(defmacro defmacro/g! (name args &rest body)
-  (let ((syms (remove-duplicates
-               (remove-if-not #'g!-symbol-p
-                              (flatten body)))))
-    `(defmacro ,name ,args
-       (let ,(mapcar
-              (lambda (s)
-                `(,s (gensym ,(subseq
-                               (symbol-name s)
-                               2))))
-              syms)
-         ,@body))))
-
-
-(defmacro defmacro! (name args &rest body)
-  (let* ((os (remove-if-not #'o!-symbol-p args))
-         (gs (mapcar #'o!-symbol-to-g!-symbol os)))
-    `(defmacro/g! ,name ,args
-       `(let ,(mapcar #'list (list ,@gs) (list ,@os))
-          ,(progn ,@body)))))
-
-
-
-
+                        (forth-handle-not-found))))))
 
 (defmacro! go-forth (o!forth &rest words)
   `(dolist (w ',words)
      (funcall ,g!forth w)))
 
 (defvar my-forth (new-forth))
+
+(def-forth-prim [ t ; <- t означает незамедлительность.
+  (setf compiling nil))
+
+(def-forth-prim ] nil ; <- не незамедлительность
+  (setf compiling t))
+
+(defmacro forth-compile-in (v)
+  `(setf (forth-word-thread dict)
+         (nconc (forth-word-thread dict)
+                (list ,v))))
+
+(defmacro forth-handle-found ()
+  `(if (and compiling
+            (not (forth-word-immediate word)))
+       (forth-compile-in (forth-word-thread word))
+       (progn
+         (setf pc (list (forth-word-thread word)))
+         (forth-inner-interpreter))))
+
+(defmacro forth-handle-not-found ()
+  `(cond
+     ((and (consp v) (eq (car v) 'quote))
+      (if compiling
+          (forth-compile-in (cadr v))
+          (push (cadr v) pstack)))
+     ((and (consp v) (eq (car v) 'postpone))
+      (let ((word (forth-lookup (cadr v) dict)))
+        (if (not word)
+            (error "Postpone failed: ~a" (cadr v)))
+        (forth-compile-in (forth-word-thread word))))
+     ((symbolp v)
+      (error "Word ~a not found" v))
+     (t
+      (if compiling
+          (forth-compile-in v)
+          (push v pstack)))))
+
+(def-forth-prim create nil
+  (setf dict (make-forth-word :prev dict)))
+
+(def-forth-prim name nil
+  (setf (forth-word-name dict) (pop pstack)))
+
+(def-forth-prim immediate nil
+  (setf (forth-word-immediate dict) t))
+
+(forth-stdlib-add
+ create
+ ] create ] [
+ '{ name)
+
+(forth-stdlib-add
+ { (postpone [) [
+ '} name immediate)
+
+(def-forth-prim @ nil
+    (push (car (pop pstack))
+          pstack))
+
+(def-forth-prim ! nil
+  (let ((location (pop pstack)))
+    (setf (car location) (pop pstack))))
