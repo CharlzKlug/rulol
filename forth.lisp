@@ -339,3 +339,49 @@
   (setf pc (if (pop pstack)
                (cadr pc)
                (cddr pc))))
+
+(forth-stdlib-add
+ { r> drop } 'exit name)
+
+(def-forth-naked-prim compile nil
+  (setf (forth-word-thread dict)
+        (nconc (forth-word-thread dict)
+               (list (cadr pc))))
+  (setf pc (cddr pc)))
+
+(def-forth-prim here nil
+  (push (last (forth-word-thread dict))
+        pstack))
+
+(forth-stdlib-add
+ { compile not
+ compile branch-if
+ compile nop
+ here } 'if name immediate)
+
+(forth-stdlib-add
+ { compile nop
+ here swap ! } 'then name immediate)
+
+(forth-stdlib-add
+ { 0 swap - } 'negate name
+ { dup 0 < if negate then } 'abs name)
+
+(forth-stdlib-add
+ { compile 't
+ compile branch-if
+ compile nop
+ here swap
+ compile nop
+ here swap ! } 'else name immediate)
+
+(forth-stdlib-add
+ { evenp if 0 else 1 then } 'mod2 name)
+
+(forth-stdlib-add
+ { compile nop
+ here } 'begin name immediate
+ { compile 't
+ compile branch-if
+ compile nop
+ here ! } 'again name immediate)
