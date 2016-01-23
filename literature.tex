@@ -1,0 +1,473 @@
+\chapter*{Литература}
+\markboth{\MakeUppercase{Литература}}{}
+\addcontentsline{toc}{chapter}{Литература}
+
+\begin{verbatim}
+;; Это ссылки для книги
+;; _Let_Over_Lambda_ за авторством Дага Хойта.
+;; Всё это рекомендовано для чтения.
+;; Каждая ссылка начинается с символа, однозначно
+;; идентифицирующего ссылку. За ним следуют одни из
+;; следующих аргументов-ключевых слов:
+;; :a Авторы как символ или список символов
+;; :y Год публикации
+;; :n Имя или название
+;; :url Web адрес
+;; :i Дополнительная информация или комментарии
+
+(accelerating-hindsight :a kent-pitman :y 1997
+                        :n "Accelerating Hindsight:
+Lisp as a Vehicle for Rapid Prototyping, Web edition"
+                        :url
+"http://www.nhplace.com/kent/PS/Hindsight.html")
+
+(aima :a (peter-norvig stuart-russell) :y 2002
+      :n "Artificial Intelligence--A Modern Approach 2nd Ed.")
+
+(algorithm-networksort :a john-gamble
+                       :n "Algorithm::Networksort Perl Program"
+                       :url
+"http://search.cpan.org/dist/AlgorithmrNetworksort/")
+
+(amop :a gregor-kiczales :y 1991
+      :n "The Art of the Metaobject Protocol")
+
+(ansi-cl :n "ANSI Common Lisp standard described by
+the Hyperspec arranged by Kent Pitman")
+
+(ansi-cl-iso-compatibility
+ :i "ANSI adds the lambda and define-symbol-macro macros,
+ostensibly for ISO compatibility"
+ :url
+ "http://lisp.org/Hyperspec/Issues/iss198-writeup.html")
+
+(ansi-cl-lisp-symbol-redefinition
+ :i "ANSI clarifies what happens if you redefine symbols
+exported from the COMMON-LISP package"
+ :url
+ "http://lisp.org/Hyperspec/Issues/iss214-writeup.html")
+
+(applied-cryptography :a bruce-schneier :y 1996
+                      :n "Applied Cryptography 2nd Ed.")
+
+(beating-avgs :a paul-graham :y 2001
+              :n "Beating the Averages"
+              :url "http://paulgraham.com/avg.html")
+
+(c-language :a (brian-kernighan dennis-ritchie) :y 1978
+            :n "The C Programing Language")
+
+(cl-ppcre :a edi-weitz
+          :n "Portable Perl-compatible regular expressions
+for Common Lisp"
+          :url "http://weitz.de/cl-ppcre/")
+
+(closures-code-generation :a (marc-feeley guy-lapalme)
+                          :y 1987
+			  :n
+"Using closures for code generation")
+
+(clrs-algos :a (thomas-cormen charles-leiserson
+                              ronalid-rivest clifford-stein)
+            :y 2001 :n "Introduction to Algorithms 2nd Ed.")
+
+(clrs-algos-p705-724
+ :i "Good treatment of sorting networks")
+
+(cltl2 :a guy-steele :y 1990
+       :n "Common Lisp the Language 2nd Ed.")
+
+(cltl2-p153 :i "Chevrolet!")
+
+(cltl2-p260
+ :i "Can’t define compiler macros over CL forms")
+
+(cltl2-p530
+ :i "Steele comments that backquote forms can be difficult
+to read and describes how idioms like cadar can
+conceptually represent operations like extracting
+the arguments of a lambda list")
+
+(cltl2-p677
+ :i "Can’t compile lambda forms defined in a non-null
+lexical environment")
+
+(cltl2-p685
+ :i "If a function is of type compiled-function, then all macro
+calls appearing lexically within the function have already
+been expanded and will not be expanded again when the
+function is called.")
+
+(cltl2-p967
+ :i "Steele describes the backquote ladder algorithm")
+
+(computing-cycles :a (lockwood-morris jerald-schwarz) :y 1980
+                  :n "Computing cyclic list structures")
+
+(cons-should-not-cons :a henry-baker :y 1988
+                      :n "CONS Should not CONS its Arguments, or,
+a Lazy Alloc is a Smart Alloc")
+
+(critique-of-dklisp :a henry-baker :y 1992
+                    :n
+"Critique of DIN Kernel Lisp Definition Version 1.2")
+
+(design-of-cmucl :a robert-maclachlan :y 2003
+                 :n "Design of CMU Common Lisp"
+                 :url
+"http://common-lisp.net/project/cmucl/doc/CMUCL-design.pdf")
+(early-cl-votes
+ :n "Collection of email messages regarding the voting
+process that lead to CL. Coordinated by Steele."
+ :url "wvw.lisp.org/table/cl-email-history.text.gz")
+
+(elements-of-style :a nick-levine :y 2001
+                   :n "Lisp Elements of Style"
+                   :url
+"http://wvv.nicklevine.org/declarative/lectures/")
+
+(end :a hugues-juille :y 1994
+     :n "Evolving Non-Determinism: An Inventive and Efficient
+Tool for Optimization and Discovery of Strategies")
+
+(equal-rights :a henry-baker :y 1990
+              :n "Equal Rights for Functional Objects or,
+The More Things Change, The More They Are the Same")
+
+(evolution-forth-hopl :a chuck-moore :y 1991
+                      :n "History Of Programming Languages:
+Forth--The Early Years"
+                      :url "http://wvv.colorforth.com/HOPL.html"
+                      :i "Website has unpublished text")
+
+(evolution-forth-hopl2 :y 1993
+                       :a (elizabeth-rather donald-colbum chuck-moore)
+                       :n "History Of Programming Languages II:
+The Evolution of Forth"
+                       :url
+"http://www.forth.com/resources/evolution/index.html")
+
+(evolution-lisp-hopl2 :a (richard-gabriel guy-steele) :y 1993
+                      :n "History Of Programming Languages II:
+The Evolution of Lisp")
+
+(first-class-extents :a (shinn-der-lee daniel-friedman)
+                     :y 1992 :n "First-Class Extents")
+
+(first-class-macros-have-types :a alan-bawden :y 2000
+                               :n "First-class macros have types")
+
+(foundations :a haskell-curry :y 1977
+             :n "Foundations of Mathematical Logic 2nd Ed.")
+
+(foundations-p28 :i "The U language")
+
+(foundations-p31-footnote3
+ :i "Description of Quine’s quasiquotation")
+
+(function-of-function :a joel-moses :y 1970
+                      :n
+"The Function of FUNCTION in LISP, or Why the FUNARG
+Problem Should be Called the Environment Problem")
+
+(gc-is-fast :a andrew-appel :y 1987
+            :n "Information Processing Letters: Garbage Collection
+can be faster than Stack Allocation")
+
+(generation-scavenging :a david-ungar :y 1984
+                       :n "Generation Scavenging: A Non-Disruptive High
+Performance Storage Reclamation Algorithm")
+
+(graham-ansi-cl :a paul-graham :y 1995
+                :n "ANSI Common Lisp")
+
+(graphics-gems-p171-175 :a alan-paeth :y 1990
+                        :n
+"Graphics Gems: Median Finding on a 3-by-3 Grid")
+
+(growing-a-language :a guy-steele :y 1999
+                    :n "Growing a Language")
+
+(history-of-cl :a masayuki-ida :y 2002
+               :n "The History of Lisp Standardization during 1984-1990"
+               :i "Interesting Japanese perspective on CL")
+
+(history-of-lisp :a john-mccarthy :y 1979
+                 :n "History of Lisp"
+                 :url
+"http://www-formal.stanford.edu/jmc/history/lisp/lisp.html")
+
+(hygiene-by-renaming :a william-clinger :y 1991
+                     :n "Hygienic macros through explicit renaming"
+                     :i "Interesting relation to sub-lexical scope")
+
+(hygienic-macro-expansion :y 1986
+                          :a (eugene-kohlbecker daniel-friedman
+                               matthias-felleisen bruce-duba)
+                          :n "Hygienic Macro Expansion"
+                          :i
+"One of the earliest discussions of hygienic macros")
+
+(implementations :a daniel-weinreb :y 2007
+                 :n "Common Lisp Implementations: A Survey"
+                 :url "http://common-lisp.net/~dlw/Lispsurvey.html")
+
+(interlisp :a warren-teitelman :y 1976
+           :n "Interlisp Reference Manual")
+
+(interlisp-tops20 :a warren-teitelman :y 1981
+                  :n
+"Interlisp Documentation for TOPS-20 operating system")
+
+(kyoto-cl-report :a (taiichi-yuasa masami-hagiya) :y 1985
+                 :n "Kyoto Common Lisp Report")
+
+(lambda-papers :a (guy-steele gerald-sussman)
+               :n "The Lambda Papers"
+               :url "http://library.readscheme.org/pagel.html"
+               :i "Lambda, the Ultimate topic")
+
+(linear-lisp :a henry-baker :y 1992
+             :n "Lively Linear Lisp, or Look Ma, No Garbage!")
+
+(linear-lisp-and-forth :a henry-baker :y 1993
+                       :n "Linear Logic and Permutation Stacks--
+The Forth Shall Be First")
+
+(lisp1-5 :a (john-mccarthy paul-abrahams daniel-edwards
+                           timothy-hart michael-levin)
+         :y 1962 :n "Lisp 1.5 programmer's manual")
+
+(lisp2-4life :a (richard-gabriel kent-pitman) :y 1988
+             :n "International Journal on Lisp and Symbolic Computation:
+Technical issues of separation in function cells and
+value cells."
+             :url "http://wvv.dreamsongs.com/Separation.html")
+
+(lisp-style :a (peter-norvig kent-pitman) :y 1993
+            :n "Tutorial on Good Lisp Programming Style")
+
+(macaroni :a guy-steele :y 1977
+          :n "Macaroni is better than spaghetti")
+
+(maclisp :a david-moon :y 1974
+         :n "Maclisp Manual, aka the Moonual")
+
+(maclisp-revised :a kent-pitman :y 1983
+                 :n "The Revised Maclisp Manual, aka the Pitmanual")
+
+(maclisp-revised-again :a kent-pitman :y 2007
+                       :n "The Revised Maclisp Manual, Sunday Morning Edition"
+                       :url "http://wvw.maclisp.info/pitmanual/index.html")
+
+(macro-by-example :a (eugene-kohlbecker mitchell-wand) :y 1987
+                  :n "Macro-by-example: Deriving syntactic transformations
+from their specifications")
+
+(macro-definitions :a timothy-hart :y 1963
+                   :n "MIT AI Memo: MACRO Definitions for LISP")
+
+(macros-that-compose :a oleg-kiselyov :y 2002
+                     :n "Macros that Compose: Systematic Macro Programming")
+
+(moving-forth :a bradford-rodriguez
+              :n "The Computer Journal: Moving Forth Column"
+              :url "http://www.zetetics.com/bj/papers/")
+
+(netcat :a *hobbit* :y 1996
+        :n "Netcat--The Network Swiss Army Knife")
+
+(nil-perspective :a jonl-white :y 1979
+                 :n "MACSYMA conference: NIL--A Perspective")
+
+(objects-have-failed :a richard-gabriel :y 2002
+                     :n "OOPSLA: Objects Have Failed"
+                     :url
+"http://www.dreamsongs.com/ObjectsHaveFailedNarrative.html")
+
+(objects-have-not-failed :a guy-steele :y 2002
+                         :n "OOPSLA: Objects Have Not Failed"
+                         :url
+"http://www.dreamsongs.com/ObjectsHaveNotFailedNarr.html")
+
+(oleg-website :a oleg-kiselyov
+              :url "http://okmij.org/ftp/")
+
+(on-lisp :a paul-graham :y 1993 :n "On Lisp")
+
+(on-lisp-p25
+ :i "Lambda forms returned from a compiled function will
+themselves also be compiled")
+
+(on-lisp-p108
+ :i "Graham doesn't like using the calling environment
+with macros")
+
+(on-lisp-p176 :i "sortf")
+
+(on-lisp-p223 :i "defanaph")
+
+(on-lisp-p237 :i "with-places")
+
+(opening-closures :a (jeffrey-siskind barak-pearlmutter)
+                  :y 2007 :n "First-Class Nonstandard Interpretations
+by Opening Closures")
+
+(paip :a peter-norvig :y 1992
+      :n "Paradigms of Artificial Intelligence Programming")
+
+(paip-pix :i "Pascal/C are special purpose, lisp is general")
+
+(paip-p20 :i "Why do we call it lambda?")
+
+(paip-p323
+ :i "Another way to avoid destructuring overhead")
+
+(paip-p783 :i "Answer 22.10: Norvig says that he would have
+gladly used the lambda macro")
+
+(paip-p853
+ :i "Once-Only: A lesson in Macrology")
+
+(paip-p877
+ :i "Don’t mix &optional and &key parameters")
+
+(patterns-of-software :a richard-gabriel :y 1998
+                      :n
+"Patterns of Software: Tales from the Software Community")
+
+(performance-evaluation :a richard-gabriel :y 1985
+                        :n "Performance and Evaluation of Lisp Systems")
+
+(pointers-as-closures :a oleg-kiselyov
+                      :n "Comp.lang.scheme: How to emulate & in Scheme"
+                      :url "http://okmij.org/ftp/Scheme/pointer-as-closure.txt")
+
+(practical-cl :a peter-seibel :y 2005
+              :n "Practical Common Lisp")
+
+(practical-cl-p95 :i "Interesting loopy once-only")
+
+(pragmatic-parsing :a henry-baker :y 1991
+                   :n "Pragmatic Parsing in Comon Lisp; or,
+Putting defmacro on Steroids"
+                   :i "Lots of great C language digs and a challenge to Scheme")
+
+(pragmatic-parsing-p11-footnote20
+ :i "Mixing of &optional and &keys bites even the experts")
+
+(programming-perl :a (larry-wall tom-christiansen jon-orvant)
+                  :y 2000 :n "Programming Perl 3rd Ed.")
+
+(quasiquotation :a alan-bawden :y 1999
+                :n "Quasiquotation in Lisp"
+                :i "Excellent, comprehensive history")
+
+(r5rs :a (richard-kelsey william-clinger jonathan-rees)
+      :n "Revised 5 Report on the Algorithmic Language Scheme")
+
+(r5rs-p25
+ :i "Scheme booleans are dumb")
+
+(schematics :a (vincent-manis james-little) :y 1995
+            :n "Schematics of Computation")
+
+(schematics-p301-343 :i "Let Over Lambda")
+
+(schematics-p466-469 :i "Tlists")
+
+(scheme-revisited :a (guy-steele gerald-sussman) :y 1998
+                  :n "HOSC: The First Report on Scheme Revisited")
+
+(sicp :a (harold-abelson gerald-sussman julie-sussman)
+      :y 1985
+      :n "Structure and Interpretation of Computer Programs")
+
+(small-pieces :a christian-queinnec :y 1994
+              :n "Lisp in Small Pieces")
+
+(small-pieces-p46
+ :i "IS-Lisp and EuLisp have enforced separate namespaces
+for dynamic/lexical variables")
+
+(small-pieces-p340-341
+ :i "Code-walking is hard in Scheme")
+
+(sn-applications :a ken-batcher :y 1968
+                 :n "Sorting networks and their applications")
+
+(spaghetti-stacks :a (daniel-bobrow ben-wegbreit) :y 1973
+                  :n
+"A model and stack implementation of multiple environments")
+
+(special-forms :a kent-pitman :y 1980
+               :n "Special Forms in Lisp")
+
+(spice-internals :a (scott-fahlman guy-steele
+                                   gail-kaiser Halter-roggen) :y 1981
+                                   :n "Internal Design of Spice Lisp")
+
+(starting-forth :a leo-brodie :y 1981
+                :n "Starting Forth"
+                :i "One of the best tutorials for learning forth")
+
+(syntactic-abstraction :y 1993
+                       :a (kent-dybvig robert-hieb carl-bruggeman)
+                       :n "Syntactic Abstraction in Scheme"
+                       :i "Describes the hygiene system used by most Schemes")
+
+(syntactic-closures :a (alan-bawden jonathan-rees) :y 1988
+                    :n "Syntactic Closures")
+
+(syntactically-recursive :a christian-queinnec :y 1993
+                         :n "Compiling Syntactically Recursive Programs")
+
+(syntax-rules-insane :a al-petrofsky :y 2002
+                     :n "Comp.lang.scheme: An Advanced Syntax-Rules Primer
+for the Mildly Insane")
+
+(syntax-rules-unhygienic :a oleg-kiselyov :y 2002
+                         :n
+"How to Write Seemingly Unhygienic and Referentially
+Opaque Macros with Syntax-rules")
+
+(taocp-vol3 :a donald-knuth :y 1973
+            :n "The Art of Computer Programming Volume 3:
+Sorting and Searching 2nd Ed.")
+
+(taocp-vol3-p111
+ :i "Algorithm 5.2.2M: Merge Exchange Sort")
+
+(thinking-forth :a leo-brodie :y 1984
+                :n "Thinking Forth: A Language and Philosophy
+for Solving Problems")
+
+(threading-lisp :a david-nordstrom :y 1990
+                :n "Threading Lisp")
+
+(unified-theory-of-gc :a (david-bacon perry-cheng v-t-rajan)
+                      :y 2004 :n "A Unified Theory of Garbage Collection")
+
+(useful-lisp-algos1-chapter3 :a (richard-waters peter-norvig)
+                             :y 1993
+:n "Some Useful Lisp Algorithms: Part 1, Chapter 3,
+Implementing Queues in Lisp")
+
+(useful-lisp-algos2 :a richard-waters :y 1993
+                    :n "Some Useful Lisp Algorithms: Part 2"
+                    :i "This report has 3 chapters, all are great:
+1: pretty printing
+2: useful code-walking macro: macroexpand-all
+3: list accumulation performance")
+
+(winston-horn :a (patrick-winston berthold-horn) :y 1988
+              :n "Lisp 3rd Ed.")
+
+(worse-is-better :a richard-gabriel :y 1991
+                 :n "Lisp: Good News, Bad News, How to Win Big, or
+Worse Is Better"
+                 :url "http://wvw.dreamsongs.com/WIB.html")
+
+(xml-as-read-macro :a sam-steingold
+:n "CLOCC source code: XML implemented as a read macro")
+\end{verbatim}
