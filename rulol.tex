@@ -1,5 +1,6 @@
 \documentclass[a4paper, 12pt]{book}
 %; whizzy -pdf
+\usepackage{index}
 \usepackage[T2A]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[english, russian]{babel}
@@ -9,10 +10,11 @@
 \graphicspath{{cover/}}
 \usepackage{pdfpages}
 \usepackage[pdfborder={0 0 0}]{hyperref}
+%\usepackage{makeidx}
 \title{Let Over Lambda \\50 Лет Лиспу}
 \date{2008}
 \author{Даг Хойт}
-
+\makeindex
 \begin{document}
 
 \newcommand{\listbegin} {\hrule}
@@ -84,6 +86,7 @@ doug@hcsw.org
 \input{appendix_d.tex}
 \input{literature.tex}
 \input{authors.tex}
+\input{indexies.tex}
 \newpage 
 \includepdf[pages={1}]{cover/last_page.pdf}
 
